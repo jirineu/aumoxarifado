@@ -1,3 +1,5 @@
+
+
 *{
     margin: 0;
     padding: 0;
@@ -6,9 +8,14 @@
 
 body{
     font-family: Arial, Helvetica, sans-serif;
-    background: #f2f2f2;
-    padding: 20px;
+    background: #f1f5f9;
+    color: #333;
+    padding: 15px;
 }
+
+/* ======================================
+   CONTAINER
+====================================== */
 
 .container{
     width: 100%;
@@ -16,46 +23,77 @@ body{
     margin: auto;
 }
 
+/* ======================================
+   TOPO
+====================================== */
+
 h1{
     text-align: center;
     color: #0f5c7a;
     margin-bottom: 5px;
+    font-size: 28px;
 }
 
 .subtitulo{
     text-align: center;
-    margin-bottom: 20px;
-    color: #555;
+    color: #666;
+    margin-bottom: 25px;
 }
+
+/* ======================================
+   CARDS
+====================================== */
 
 .card{
     background: white;
-    padding: 20px;
     border-radius: 20px;
+    padding: 20px;
     margin-bottom: 20px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+
+    box-shadow:
+        0 4px 15px rgba(0,0,0,0.08);
 }
 
+/* ======================================
+   TITULOS
+====================================== */
+
 h2{
-    margin-bottom: 20px;
     color: #0f5c7a;
+    margin-bottom: 20px;
+    font-size: 22px;
 }
+
+/* ======================================
+   FORMULARIO
+====================================== */
 
 label{
     display: block;
-    margin-bottom: 5px;
+    margin-bottom: 6px;
     margin-top: 15px;
     font-weight: bold;
+    font-size: 14px;
 }
 
 input,
 textarea{
     width: 100%;
     padding: 14px;
-    border-radius: 10px;
-    border: 1px solid #ccc;
-    margin-bottom: 10px;
+
+    border-radius: 12px;
+    border: 1px solid #dcdcdc;
+
     font-size: 16px;
+
+    outline: none;
+
+    transition: 0.2s;
+}
+
+input:focus,
+textarea:focus{
+    border-color: #0f5c7a;
 }
 
 textarea{
@@ -63,51 +101,93 @@ textarea{
     height: 120px;
 }
 
+/* ======================================
+   BOTÕES
+====================================== */
+
 button{
+    border: none;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+button:hover{
+    opacity: 0.9;
+}
+
+/* BOTÃO PRINCIPAL */
+
+.card button:not(.btn-filtro):not(.btn-check):not(.btn-x){
     width: 100%;
     padding: 15px;
-    border: none;
-    border-radius: 12px;
+
     background: #0f5c7a;
     color: white;
+
+    border-radius: 12px;
+
     font-size: 16px;
     font-weight: bold;
-    cursor: pointer;
-    margin-top: 10px;
+
+    margin-top: 20px;
 }
+
+/* ======================================
+   HISTÓRICO
+====================================== */
 
 .topo-historico{
     display: flex;
     justify-content: space-between;
     align-items: center;
+
     margin-bottom: 20px;
 }
 
+/* BOTÃO FILTRO */
+
 .btn-filtro{
-    width: 50px;
-    height: 50px;
+    width: 45px;
+    height: 45px;
+
     border-radius: 12px;
-    padding: 0;
+
+    background: #0f5c7a;
+    color: white;
+
     font-size: 20px;
 }
 
+/* ======================================
+   ITENS HISTÓRICO
+====================================== */
+
 .item-historico{
-    background: #f7f7f7;
-    border-left: 8px solid #0f5c7a;
-    padding: 15px;
-    border-radius: 15px;
+    background: #f8fafc;
+
+    border-left: 5px solid #0f5c7a;
+
+    padding: 18px;
+
+    border-radius: 16px;
+
     margin-bottom: 15px;
 }
 
 .item-historico h3{
     color: #0f5c7a;
     margin-bottom: 10px;
+    font-size: 20px;
 }
 
 .item-historico p{
-    margin-bottom: 5px;
-    color: #333;
+    margin-bottom: 6px;
+    line-height: 1.4;
 }
+
+/* ======================================
+   AÇÕES
+====================================== */
 
 .acoes{
     display: flex;
@@ -115,54 +195,77 @@ button{
     margin-top: 15px;
 }
 
+/* CHECK */
+
 .btn-check{
-    background: green;
-    color: white;
-    border: none;
     width: 45px;
     height: 45px;
-    border-radius: 10px;
-    font-size: 18px;
+
+    border-radius: 12px;
+
+    background: #16a34a;
+    color: white;
+
+    font-size: 20px;
+    font-weight: bold;
 }
+
+/* X */
 
 .btn-x{
-    background: red;
-    color: white;
-    border: none;
     width: 45px;
     height: 45px;
-    border-radius: 10px;
-    font-size: 18px;
+
+    border-radius: 12px;
+
+    background: #dc2626;
+    color: white;
+
+    font-size: 20px;
+    font-weight: bold;
 }
 
+/* ======================================
+   STATUS
+====================================== */
+
 .status-devolvido{
-    color: green;
+    margin-top: 12px;
+    color: #16a34a;
     font-weight: bold;
-    margin-top: 10px;
 }
 
 .status-extraviado{
-    color: red;
+    margin-top: 12px;
+    color: #dc2626;
     font-weight: bold;
-    margin-top: 10px;
 }
 
 .motivo{
-    margin-top: 8px;
+    margin-top: 10px;
+    background: #fff1f2;
+    padding: 10px;
+    border-radius: 10px;
+    color: #7f1d1d;
     font-size: 14px;
-    color: #555;
 }
+
+/* ======================================
+   POPUP
+====================================== */
 
 .popup{
     display: none;
+
     position: fixed;
+
     top: 0;
     left: 0;
 
     width: 100%;
     height: 100%;
 
-    background: rgba(0,0,0,0.5);
+    background: rgba(0,0,0,0.45);
 
     justify-content: center;
     align-items: center;
@@ -172,15 +275,47 @@ button{
 
 .popup-conteudo{
     background: white;
+
     width: 90%;
     max-width: 400px;
-    padding: 20px;
+
+    padding: 25px;
+
     border-radius: 20px;
+
+    animation: aparecer 0.2s ease;
 }
 
-.btn-pdf{
-    margin-top: 20px;
+.popup-conteudo h2{
+    margin-bottom: 20px;
 }
+
+.popup-conteudo button{
+    width: 100%;
+    margin-top: 15px;
+}
+
+/* ======================================
+   ANIMAÇÃO
+====================================== */
+
+@keyframes aparecer{
+
+    from{
+        opacity: 0;
+        transform: scale(0.95);
+    }
+
+    to{
+        opacity: 1;
+        transform: scale(1);
+    }
+
+}
+
+/* ======================================
+   RESPONSIVO
+====================================== */
 
 @media (max-width: 600px){
 
@@ -189,7 +324,20 @@ button{
     }
 
     .card{
-        padding: 15px;
+        padding: 16px;
+    }
+
+    h1{
+        font-size: 24px;
+    }
+
+    h2{
+        font-size: 20px;
+    }
+
+    input,
+    textarea{
+        font-size: 15px;
     }
 
 }
