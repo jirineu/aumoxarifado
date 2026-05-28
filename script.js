@@ -4,7 +4,7 @@ let historico =
 let idExtravio = null;
 
 const URL_APPS_SCRIPT =
-    "COLE_A_URL_DO_APPS_SCRIPT";
+    "https://script.google.com/macros/s/AKfycbxSXMxe0Q4J1rrP9sMcVyL5Q2YzXrUlXMJPDcuW8Gpgb6RAsi1Bxl9fJ48nZc_-tiHXgw/exec";
 
 async function salvarDados(dados){
 
