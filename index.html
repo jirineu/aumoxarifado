@@ -1,82 +1,112 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Controle de Saída de Material</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Controle de Material</title>
 
   <link rel="stylesheet" href="style.css">
 
-  <!-- Biblioteca PDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
 
-  <div class="container">
+<div class="container">
 
-    <header>
-      <h1>Bruna Construções</h1>
-      <p>Controle de Saída de Material</p>
-    </header>
+  <header>
+    <h1>Bruna Construções</h1>
+    <p>Controle de Saída de Material</p>
+  </header>
 
-    <section class="form-section">
+  <section class="form-section">
 
-      <div class="input-group">
-        <label>Nome do Material</label>
-        <input type="text" id="material" placeholder="Ex: Cimento">
-      </div>
+    <div class="input-group">
+      <label>Nome do Funcionário</label>
+      <input type="text" id="funcionario" placeholder="Digite o nome">
+    </div>
 
-      <div class="input-group">
-        <label>Quantidade</label>
-        <input type="number" id="quantidade" placeholder="Ex: 10">
-      </div>
+    <div class="input-group">
+      <label>Material</label>
+      <input type="text" id="material" placeholder="Digite o material">
+    </div>
 
-      <button onclick="adicionarRegistro()">
-        Adicionar Registro
+    <div class="input-group">
+      <label>Quantidade</label>
+      <input type="number" id="quantidade" placeholder="Digite a quantidade">
+    </div>
+
+    <button onclick="adicionarRegistro()">
+      Registrar Saída
+    </button>
+
+  </section>
+
+  <section class="historico-section">
+
+    <div class="historico-topo">
+      <h2>Histórico do Dia</h2>
+
+      <button class="btn-filtro" onclick="abrirFiltro()">
+        Filtro
       </button>
+    </div>
 
-    </section>
+    <div id="historico"></div>
 
-    <section class="filtro-section">
+  </section>
 
-      <h2>Filtrar Histórico</h2>
+</div>
 
-      <div class="filtro-container">
+<!-- POPUP FILTRO -->
+<div class="modal" id="modalFiltro">
 
-        <div class="input-group">
-          <label>Data Inicial</label>
-          <input type="date" id="dataInicio">
-        </div>
+  <div class="modal-content">
 
-        <div class="input-group">
-          <label>Data Final</label>
-          <input type="date" id="dataFim">
-        </div>
+    <h3>Filtrar Histórico</h3>
 
-      </div>
+    <div class="input-group">
+      <label>Data Inicial</label>
+      <input type="date" id="dataInicio">
+    </div>
 
-      <button class="btn-filtrar" onclick="filtrarHistorico()">
-        Filtrar
-      </button>
+    <div class="input-group">
+      <label>Data Final</label>
+      <input type="date" id="dataFim">
+    </div>
 
-      <button class="btn-pdf" onclick="gerarPDF()">
-        Gerar PDF
-      </button>
+    <button onclick="filtrarHistorico()">
+      Filtrar
+    </button>
 
-    </section>
-
-    <section class="historico-section">
-
-      <h2>Histórico de Saída</h2>
-
-      <div id="historico"></div>
-
-    </section>
+    <button class="btn-fechar" onclick="fecharFiltro()">
+      Fechar
+    </button>
 
   </div>
 
-  <script src="script.js"></script>
+</div>
+
+<!-- POPUP EXTRAVIO -->
+<div class="modal" id="modalExtravio">
+
+  <div class="modal-content">
+
+    <h3>Motivo do Extravio</h3>
+
+    <textarea
+      id="motivoExtravio"
+      placeholder="Explique o motivo..."
+    ></textarea>
+
+    <button onclick="confirmarExtravio()">
+      Confirmar
+    </button>
+
+  </div>
+
+</div>
+
+<script src="script.js"></script>
 
 </body>
 </html>
