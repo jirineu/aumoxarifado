@@ -1,275 +1,365 @@
 let historico =
-JSON.parse(localStorage.getItem("historicoMateriais")) || [];
+    JSON.parse(localStorage.getItem("historico")) || [];
 
-let indiceExtravio = null;
+let idExtravio = null;
 
-function adicionarRegistro(){
+function salvarDados(){
 
-  const funcionario =
-  document.getElementById("funcionario").value;
+    localStorage.setItem(
+        "historico",
+        JSON.stringify(historico)
+    );
 
-  const material =
-  document.getElementById("material").value;
-
-  const quantidade =
-  document.getElementById("quantidade").value;
-
-  if(
-    funcionario === "" ||
-    material === "" ||
-    quantidade === ""
-  ){
-    alert("Preencha todos os campos.");
-    return;
-  }
-
-  const agora = new Date();
-
-  const registro = {
-
-    funcionario,
-    material,
-    quantidade,
-
-    dataISO: agora.toISOString(),
-
-    data:
-    agora.toLocaleDateString("pt-BR"),
-
-    horario:
-    agora.toLocaleTimeString("pt-BR"),
-
-    status:"pendente",
-
-    motivo:""
-  };
-
-  historico.push(registro);
-
-  salvar();
-
-  document.getElementById("funcionario").value = "";
-  document.getElementById("material").value = "";
-  document.getElementById("quantidade").value = "";
-
-  mostrarHistoricoHoje();
-}
-
-function salvar(){
-
-  localStorage.setItem(
-    "historicoMateriais",
-    JSON.stringify(historico)
-  );
+    // FUTURO GOOGLE APPS SCRIPT
+    /*
+    fetch("URL_APPS_SCRIPT",{
+        method:"POST",
+        body: JSON.stringify(historico)
+    });
+    */
 
 }
 
-function mostrarHistoricoHoje(){
+function registrarSaida(){
 
-  const hoje = new Date();
+    const material =
+        document.getElementById("material").value;
 
-  const dataHoje =
-  hoje.toLocaleDateString("pt-BR");
+    const quantidade =
+        document.getElementById("quantidade").value;
 
-  const lista =
-  historico.filter(item => item.data === dataHoje);
+    const funcionario =
+        document.getElementById("funcionario").value;
 
-  renderizarHistorico(lista);
-}
-
-function renderizarHistorico(lista){
-
-  const div =
-  document.getElementById("historico");
-
-  div.innerHTML = "";
-
-  if(lista.length === 0){
-
-    div.innerHTML =
-    "<p>Nenhum registro encontrado.</p>";
-
-    return;
-  }
-
-  lista.reverse().forEach((item) => {
-
-    const index =
-    historico.indexOf(item);
-
-    let statusHTML = "";
-
-    if(item.status === "devolvido"){
-
-      statusHTML = `
-        <div class="status devolvido">
-          ✔ Material Devolvido
-        </div>
-      `;
+    if(
+        material === "" ||
+        quantidade === "" ||
+        funcionario === ""
+    ){
+        alert("Preencha todos os campos.");
+        return;
     }
 
-    if(item.status === "extraviado"){
+    const agora = new Date();
 
-      statusHTML = `
-        <div class="status extraviado">
-          ✖ Material Extraviado
-        </div>
+    const data =
+        agora.toISOString().split("T")[0];
 
-        <div class="motivo">
-          <strong>Motivo:</strong>
-          ${item.motivo}
-        </div>
-      `;
+    const horario =
+        agora.toLocaleTimeString("pt-BR");
+
+    const novoRegistro = {
+        id: Date.now(),
+        material,
+        quantidade,
+        funcionario,
+        data,
+        horario,
+        status: "pendente",
+        motivo: ""
+    };
+
+    historico.unshift(novoRegistro);
+
+    salvarDados();
+
+    renderHistorico();
+
+    limparCampos();
+}
+
+function limparCampos(){
+
+    document.getElementById("material").value = "";
+    document.getElementById("quantidade").value = "";
+    document.getElementById("funcionario").value = "";
+
+}
+
+function renderHistorico(lista = null){
+
+    const historicoDiv =
+        document.getElementById("historico");
+
+    historicoDiv.innerHTML = "";
+
+    const dados = lista || filtrarDiaAtual();
+
+    if(dados.length === 0){
+
+        historicoDiv.innerHTML =
+            "<p>Nenhum registro encontrado.</p>";
+
+        return;
     }
 
-    div.innerHTML += `
+    dados.forEach(item => {
 
-      <div class="card">
+        historicoDiv.innerHTML += `
 
-        <h3>${item.material}</h3>
+            <div class="item-historico">
 
-        <p>
-          <strong>Funcionário:</strong>
-          ${item.funcionario}
-        </p>
+                <h3>${item.material}</h3>
 
-        <p>
-          <strong>Quantidade:</strong>
-          ${item.quantidade}
-        </p>
+                <p>
+                    <strong>Quantidade:</strong>
+                    ${item.quantidade}
+                </p>
 
-        <p>
-          <strong>Data:</strong>
-          ${item.data}
-        </p>
+                <p>
+                    <strong>Funcionário:</strong>
+                    ${item.funcionario}
+                </p>
 
-        <p>
-          <strong>Horário:</strong>
-          ${item.horario}
-        </p>
+                <p>
+                    <strong>Data:</strong>
+                    ${formatarData(item.data)}
+                </p>
 
-        ${
-          item.status === "pendente"
-          ?
+                <p>
+                    <strong>Horário:</strong>
+                    ${item.horario}
+                </p>
 
-          `
-          <div class="acoes">
+                ${
+                    item.status === "devolvido"
 
-            <button
-              class="btn-check"
-              onclick="marcarDevolvido(${index})"
-            >
-              ✔
-            </button>
+                    ?
 
-            <button
-              class="btn-x"
-              onclick="abrirExtravio(${index})"
-            >
-              ✖
-            </button>
+                    `
+                    <div class="status-devolvido">
+                        ✔ CHECKED
+                    </div>
+                    `
 
-          </div>
-          `
-          :
+                    :
 
-          statusHTML
-        }
+                    item.status === "extraviado"
 
-      </div>
+                    ?
 
-    `;
-  });
+                    `
+                    <div class="status-extraviado">
+                        ✖ EXTRAVIADO
+                    </div>
+
+                    <div class="motivo">
+                        <strong>Motivo:</strong>
+                        ${item.motivo}
+                    </div>
+                    `
+
+                    :
+
+                    `
+                    <div class="acoes">
+
+                        <button
+                            class="btn-check"
+                            onclick="marcarDevolvido(${item.id})"
+                        >
+                            ✔
+                        </button>
+
+                        <button
+                            class="btn-x"
+                            onclick="abrirExtravio(${item.id})"
+                        >
+                            ✖
+                        </button>
+
+                    </div>
+                    `
+                }
+
+            </div>
+
+        `;
+    });
 
 }
 
-function marcarDevolvido(index){
+function filtrarDiaAtual(){
 
-  historico[index].status = "devolvido";
+    const hoje =
+        new Date().toISOString().split("T")[0];
 
-  salvar();
-
-  mostrarHistoricoHoje();
-}
-
-function abrirExtravio(index){
-
-  indiceExtravio = index;
-
-  document.getElementById("modalExtravio")
-  .style.display = "flex";
-}
-
-function confirmarExtravio(){
-
-  const motivo =
-  document.getElementById("motivoExtravio").value;
-
-  if(motivo === ""){
-
-    alert("Explique o motivo.");
-    return;
-  }
-
-  historico[indiceExtravio].status =
-  "extraviado";
-
-  historico[indiceExtravio].motivo =
-  motivo;
-
-  salvar();
-
-  document.getElementById("motivoExtravio")
-  .value = "";
-
-  document.getElementById("modalExtravio")
-  .style.display = "none";
-
-  mostrarHistoricoHoje();
+    return historico.filter(item =>
+        item.data === hoje
+    );
 }
 
 function abrirFiltro(){
 
-  document.getElementById("modalFiltro")
-  .style.display = "flex";
+    document.getElementById("popupFiltro")
+        .style.display = "flex";
 }
 
 function fecharFiltro(){
 
-  document.getElementById("modalFiltro")
-  .style.display = "none";
-
-  mostrarHistoricoHoje();
+    document.getElementById("popupFiltro")
+        .style.display = "none";
 }
 
 function filtrarHistorico(){
 
-  const inicio =
-  document.getElementById("dataInicio").value;
+    const inicio =
+        document.getElementById("dataInicial").value;
 
-  const fim =
-  document.getElementById("dataFim").value;
+    const fim =
+        document.getElementById("dataFinal").value;
 
-  if(inicio === "" || fim === ""){
+    if(inicio === "" || fim === ""){
+        alert("Selecione as datas.");
+        return;
+    }
 
-    mostrarHistoricoHoje();
+    const filtrado = historico.filter(item => {
 
-    return;
-  }
+        return item.data >= inicio &&
+               item.data <= fim;
 
-  const lista = historico.filter(item => {
+    });
 
-    const data =
-    new Date(item.dataISO);
+    renderHistorico(filtrado);
 
-    return data >= new Date(inicio)
-    &&
-    data <= new Date(fim + "T23:59:59");
-  });
-
-  renderizarHistorico(lista);
-
-  fecharFiltro();
+    fecharFiltro();
 }
 
-mostrarHistoricoHoje();
+function marcarDevolvido(id){
+
+    const item =
+        historico.find(i => i.id === id);
+
+    item.status = "devolvido";
+
+    salvarDados();
+
+    renderHistorico();
+}
+
+function abrirExtravio(id){
+
+    idExtravio = id;
+
+    document.getElementById("popupExtravio")
+        .style.display = "flex";
+}
+
+function confirmarExtravio(){
+
+    const motivo =
+        document.getElementById("motivoExtravio").value;
+
+    if(motivo === ""){
+        alert("Digite o motivo.");
+        return;
+    }
+
+    const item =
+        historico.find(i => i.id === idExtravio);
+
+    item.status = "extraviado";
+
+    item.motivo = motivo;
+
+    salvarDados();
+
+    document.getElementById("popupExtravio")
+        .style.display = "none";
+
+    document.getElementById("motivoExtravio").value = "";
+
+    renderHistorico();
+}
+
+function formatarData(data){
+
+    const partes = data.split("-");
+
+    return `${partes[2]}/${partes[1]}/${partes[0]}`;
+}
+
+function gerarPDF(){
+
+    const { jsPDF } = window.jspdf;
+
+    const doc = new jsPDF();
+
+    let y = 20;
+
+    doc.setFontSize(18);
+
+    doc.text(
+        "Relatório - Bruna Construções",
+        20,
+        y
+    );
+
+    y += 15;
+
+    historico.forEach(item => {
+
+        doc.setFontSize(12);
+
+        doc.text(
+            `Material: ${item.material}`,
+            20,
+            y
+        );
+
+        y += 8;
+
+        doc.text(
+            `Quantidade: ${item.quantidade}`,
+            20,
+            y
+        );
+
+        y += 8;
+
+        doc.text(
+            `Funcionário: ${item.funcionario}`,
+            20,
+            y
+        );
+
+        y += 8;
+
+        doc.text(
+            `Data: ${formatarData(item.data)}`,
+            20,
+            y
+        );
+
+        y += 8;
+
+        doc.text(
+            `Horário: ${item.horario}`,
+            20,
+            y
+        );
+
+        y += 8;
+
+        doc.text(
+            `Status: ${item.status}`,
+            20,
+            y
+        );
+
+        y += 15;
+
+        if(y > 260){
+
+            doc.addPage();
+
+            y = 20;
+        }
+
+    });
+
+    doc.save("relatorio-material.pdf");
+}
+
+renderHistorico();
