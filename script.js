@@ -1,530 +1,658 @@
-let historico =
-JSON.parse(localStorage.getItem("historico")) || [];
+// ========================================
+// HISTÓRICO LOCAL
+// ========================================
+
+let historico = [];
+
+try{
+
+    historico =
+        JSON.parse(
+            localStorage.getItem("historico")
+        ) || [];
+
+}catch{
+
+    historico = [];
+}
 
 let idExtravio = null;
 
-const URL_APPS_SCRIPT =
-"";
+// ========================================
+// URL APPS SCRIPT
+// ========================================
+// DEIXE VAZIO POR ENQUANTO
+// QUANDO CONECTAR PLANILHA,
+// COLE A URL DO WEB APP
+// ========================================
+
+const URL_APPS_SCRIPT = "";
+
+// ========================================
+// SALVAR LOCAL STORAGE
+// ========================================
+
+function salvarLocal(){
+
+    localStorage.setItem(
+        "historico",
+        JSON.stringify(historico)
+    );
+
+}
+
+// ========================================
+// SALVAR PLANILHA
+// ========================================
 
 async function salvarDados(dados){
 
-try{  
+    // SE NÃO TIVER URL
+    // NÃO ENVIA PARA PLANILHA
 
-    const resposta = await fetch(  
-        URL_APPS_SCRIPT,  
-        {  
+    if(URL_APPS_SCRIPT === ""){
+        return;
+    }
 
-            method: "POST",  
+    try{
 
-            headers: {  
-                "Content-Type":  
-                "application/json"  
-            },  
+        const resposta = await fetch(
+            URL_APPS_SCRIPT,
+            {
 
-            body: JSON.stringify(dados)  
+                method: "POST",
 
-        }  
-    );  
+                headers: {
+                    "Content-Type":
+                    "application/json"
+                },
 
-    const resultado =  
-        await resposta.json();  
+                body: JSON.stringify(dados)
 
-    if(resultado.sucesso){  
+            }
+        );
 
-        console.log(  
-            "Salvo na planilha!"  
-        );  
+        const resultado =
+            await resposta.json();
 
-    }else{  
+        if(resultado.sucesso){
 
-        console.error(  
-            "Erro Apps Script:",  
-            resultado.erro  
-        );  
-    }  
+            console.log(
+                "Salvo na planilha!"
+            );
 
-}catch(erro){  
+        }else{
 
-    console.error(  
-        "Erro ao salvar:",  
-        erro  
-    );  
+            console.error(
+                "Erro Apps Script:",
+                resultado.erro
+            );
+        }
+
+    }catch(erro){
+
+        console.error(
+            "Erro ao salvar:",
+            erro
+        );
+    }
 }
 
-}
+// ========================================
+// REGISTRAR SAÍDA
+// ========================================
 
 function registrarSaida(){
 
-const material =  
-    document.getElementById("material").value;  
+    const material =
+        document.getElementById("material").value;
 
-const quantidade =  
-    document.getElementById("quantidade").value;  
+    const quantidade =
+        document.getElementById("quantidade").value;
 
-const funcionario =  
-    document.getElementById("funcionario").value;  
+    const funcionario =
+        document.getElementById("funcionario").value;
 
-if(  
-    material === "" ||  
-    quantidade === "" ||  
-    funcionario === ""  
-){  
-    alert("Preencha todos os campos.");  
-    return;  
-}  
+    if(
+        material === "" ||
+        quantidade === "" ||
+        funcionario === ""
+    ){
+        alert("Preencha todos os campos.");
+        return;
+    }
 
-const agora = new Date();  
+    const agora = new Date();
 
-const data =  
-    agora.toISOString().split("T")[0];  
+    const data =
+        agora.toISOString().split("T")[0];
 
-const horario =  
-    agora.toLocaleTimeString("pt-BR");  
+    const horario =
+        agora.toLocaleTimeString("pt-BR");
 
-const novoRegistro = {  
-    id: Date.now(),  
-    material,  
-    quantidade,  
-    funcionario,  
-    data,  
-    horario,  
-    status: "pendente",  
-    motivo: ""  
-};  
+    const novoRegistro = {
 
-historico.unshift(novoRegistro);  
+        id: Date.now(),
 
-salvarDados();  
+        material,
 
-renderHistorico();  
+        quantidade,
 
-limparCampos();
+        funcionario,
 
+        data,
+
+        horario,
+
+        status: "pendente",
+
+        motivo: ""
+
+    };
+
+    historico.unshift(novoRegistro);
+
+    // SALVA LOCAL
+
+    salvarLocal();
+
+    // SALVA PLANILHA
+
+    salvarDados(novoRegistro);
+
+    renderHistorico();
+
+    limparCampos();
 }
+
+// ========================================
+// LIMPAR CAMPOS
+// ========================================
 
 function limparCampos(){
 
-document.getElementById("material").value = "";  
-document.getElementById("quantidade").value = "";  
-document.getElementById("funcionario").value = "";
+    document.getElementById("material").value = "";
 
+    document.getElementById("quantidade").value = "";
+
+    document.getElementById("funcionario").value = "";
 }
+
+// ========================================
+// RENDER HISTÓRICO
+// ========================================
 
 function renderHistorico(lista = null){
 
-const historicoDiv =  
-    document.getElementById("historico");  
+    const historicoDiv =
+        document.getElementById("historico");
 
-historicoDiv.innerHTML = "";  
+    historicoDiv.innerHTML = "";
 
-const dados = lista || filtrarDiaAtual();  
+    const dados =
+        lista || filtrarDiaAtual();
 
-if(dados.length === 0){  
+    if(dados.length === 0){
 
-    historicoDiv.innerHTML =  
-        "<p>Nenhum registro encontrado.</p>";  
+        historicoDiv.innerHTML =
+            "<p>Nenhum registro encontrado.</p>";
 
-    return;  
-}  
+        return;
+    }
 
-dados.forEach(item => {  
+    dados.forEach(item => {
 
-    historicoDiv.innerHTML += `  
+        historicoDiv.innerHTML += `
 
-        <div class="item-historico">  
+            <div class="item-historico">
 
-            <h3>${item.material}</h3>  
+                <h3>${item.material}</h3>
 
-            <p>  
-                <strong>Quantidade:</strong>  
-                ${item.quantidade}  
-            </p>  
+                <p>
+                    <strong>Quantidade:</strong>
+                    ${item.quantidade}
+                </p>
 
-            <p>  
-                <strong>Funcionário:</strong>  
-                ${item.funcionario}  
-            </p>  
+                <p>
+                    <strong>Funcionário:</strong>
+                    ${item.funcionario}
+                </p>
 
-            <p>  
-                <strong>Data:</strong>  
-                ${formatarData(item.data)}  
-            </p>  
+                <p>
+                    <strong>Data:</strong>
+                    ${formatarData(item.data)}
+                </p>
 
-            <p>  
-                <strong>Horário:</strong>  
-                ${item.horario}  
-            </p>  
+                <p>
+                    <strong>Horário:</strong>
+                    ${item.horario}
+                </p>
 
-            ${  
-                item.status === "devolvido"  
+                ${
 
-                ?  
+                    item.status === "devolvido"
 
-                `  
-                <div class="status-devolvido">  
-                    ✔ Material devolvido/usado  
-                </div>  
-                `  
+                    ?
 
-                :  
+                    `
+                    <div class="status-devolvido">
+                        ✔ Material devolvido/usado
+                    </div>
+                    `
 
-                item.status === "extraviado"  
+                    :
 
-                ?  
+                    item.status === "extraviado"
 
-                `  
-                <div class="status-extraviado">  
-                    ✖ EXTRAVIADO  
-                </div>  
+                    ?
 
-                <div class="motivo">  
-                    <strong>Motivo:</strong>  
-                    ${item.motivo}  
-                </div>  
-                `  
+                    `
+                    <div class="status-extraviado">
+                        ✖ EXTRAVIADO
+                    </div>
 
-                :  
+                    <div class="motivo">
+                        <strong>Motivo:</strong>
+                        ${item.motivo || "-"}
+                    </div>
+                    `
 
-                `  
-                <div class="acoes">  
+                    :
 
-                    <button  
-                        class="btn-check"  
-                        onclick="marcarDevolvido(${item.id})"  
-                    >  
-                        ✔  
-                    </button>  
+                    `
+                    <div class="acoes">
 
-                    <button  
-                        class="btn-x"  
-                        onclick="abrirExtravio(${item.id})"  
-                    >  
-                        ✖  
-                    </button>  
+                        <button
+                            class="btn-check"
+                            onclick="marcarDevolvido(${item.id})"
+                        >
+                            ✔
+                        </button>
 
-                </div>  
-                `  
-            }  
+                        <button
+                            class="btn-x"
+                            onclick="abrirExtravio(${item.id})"
+                        >
+                            ✖
+                        </button>
 
-        </div>  
+                    </div>
+                    `
+                }
 
-    `;  
-});
-
+            </div>
+        `;
+    });
 }
+
+// ========================================
+// FILTRAR DIA ATUAL
+// ========================================
 
 function filtrarDiaAtual(){
 
-const hoje =  
-    new Date().toISOString().split("T")[0];  
+    const hoje =
+        new Date().toISOString().split("T")[0];
 
-return historico.filter(item =>  
-    item.data === hoje  
-);
-
+    return historico.filter(item =>
+        item.data === hoje
+    );
 }
+
+// ========================================
+// POPUP FILTRO
+// ========================================
 
 function abrirFiltro(){
 
-document.getElementById("popupFiltro")  
-    .style.display = "flex";
-
+    document.getElementById(
+        "popupFiltro"
+    ).style.display = "flex";
 }
 
 function fecharFiltro(){
 
-document.getElementById("popupFiltro")  
-    .style.display = "none";
-
+    document.getElementById(
+        "popupFiltro"
+    ).style.display = "none";
 }
+
+// ========================================
+// FILTRAR HISTÓRICO
+// ========================================
 
 function filtrarHistorico(){
 
-const inicio =  
-    document.getElementById("dataInicial").value;  
+    const inicio =
+        document.getElementById(
+            "dataInicial"
+        ).value;
 
-const fim =  
-    document.getElementById("dataFinal").value;  
+    const fim =
+        document.getElementById(
+            "dataFinal"
+        ).value;
 
-if(inicio === "" || fim === ""){  
-    alert("Selecione as datas.");  
-    return;  
-}  
+    if(inicio === "" || fim === ""){
 
-const filtrado = historico.filter(item => {  
+        alert("Selecione as datas.");
 
-    return item.data >= inicio &&  
-           item.data <= fim;  
+        return;
+    }
 
-});  
+    const filtrado =
+        historico.filter(item => {
 
-renderHistorico(filtrado);  
+            return item.data >= inicio &&
+                   item.data <= fim;
 
-fecharFiltro();
+        });
 
+    renderHistorico(filtrado);
+
+    fecharFiltro();
 }
+
+// ========================================
+// MATERIAL DEVOLVIDO
+// ========================================
 
 function marcarDevolvido(id){
 
-const item =  
-    historico.find(i => i.id === id);  
+    const item =
+        historico.find(i => i.id === id);
 
-item.status = "devolvido";  
+    if(!item){
+        return;
+    }
 
-salvarDados();  
+    item.status = "devolvido";
 
-renderHistorico();
+    salvarLocal();
 
+    salvarDados(item);
+
+    renderHistorico();
 }
+
+// ========================================
+// ABRIR EXTRAVIO
+// ========================================
 
 function abrirExtravio(id){
 
-idExtravio = id;  
+    idExtravio = id;
 
-document.getElementById("popupExtravio")  
-    .style.display = "flex";
-
+    document.getElementById(
+        "popupExtravio"
+    ).style.display = "flex";
 }
+
+// ========================================
+// CONFIRMAR EXTRAVIO
+// ========================================
 
 function confirmarExtravio(){
 
-const motivo =  
-    document.getElementById("motivoExtravio").value;  
+    const motivo =
+        document.getElementById(
+            "motivoExtravio"
+        ).value;
 
-if(motivo === ""){  
-    alert("Digite o motivo.");  
-    return;  
-}  
+    if(motivo === ""){
 
-const item =  
-    historico.find(i => i.id === idExtravio);  
+        alert("Digite o motivo.");
 
-item.status = "extraviado";  
+        return;
+    }
 
-item.motivo = motivo;  
+    const item =
+        historico.find(i => i.id === idExtravio);
 
-salvarDados();  
+    if(!item){
+        return;
+    }
 
-document.getElementById("popupExtravio")  
-    .style.display = "none";  
+    item.status = "extraviado";
 
-document.getElementById("motivoExtravio").value = "";  
+    item.motivo = motivo;
 
-renderHistorico();
+    salvarLocal();
 
+    salvarDados(item);
+
+    document.getElementById(
+        "popupExtravio"
+    ).style.display = "none";
+
+    document.getElementById(
+        "motivoExtravio"
+    ).value = "";
+
+    renderHistorico();
 }
+
+// ========================================
+// FORMATAR DATA
+// ========================================
 
 function formatarData(data){
 
-const partes = data.split("-");  
+    const partes = data.split("-");
 
-return `${partes[2]}/${partes[1]}/${partes[0]}`;
-
+    return `${partes[2]}/${partes[1]}/${partes[0]}`;
 }
+
+// ========================================
+// GERAR PDF
+// ========================================
 
 function gerarPDF(){
 
-const { jsPDF } = window.jspdf;  
+    const { jsPDF } = window.jspdf;
 
-const doc = new jsPDF("p", "mm", "a4");  
+    const doc =
+        new jsPDF("p", "mm", "a4");
 
-// =====================================  
-// TÍTULO  
-// =====================================  
+    doc.setFontSize(18);
 
-doc.setFontSize(18);  
+    doc.text(
+        "Bruna Construções",
+        105,
+        15,
+        { align: "center" }
+    );
 
-doc.text(  
-    "Bruna Construções",  
-    105,  
-    15,  
-    { align: "center" }  
-);  
+    doc.setFontSize(12);
 
-doc.setFontSize(12);  
+    doc.text(
+        "Controle de Saída de Material",
+        105,
+        23,
+        { align: "center" }
+    );
 
-doc.text(  
-    "Controle de Saída de Material",  
-    105,  
-    23,  
-    { align: "center" }  
-);  
+    let y = 35;
 
-// =====================================  
-// CONFIGURAÇÃO TABELA  
-// =====================================  
+    const colunas = {
 
-let y = 35;  
+        material: 10,
 
-const colunas = {  
-    material: 10,  
-    quantidade: 55,  
-    funcionario: 80,  
-    data: 130,  
-    horario: 155,  
-    status: 180  
-};  
+        quantidade: 50,
 
-// ALTURA LINHA  
-const alturaLinha = 10;  
+        funcionario: 70,
 
-// =====================================  
-// CABEÇALHO  
-// =====================================  
+        data: 120,
 
-function desenharCabecalho(){  
+        horario: 145,
 
-    doc.setFillColor(15, 92, 122);  
+        status: 170
+    };
 
-    doc.rect(10, y, 190, alturaLinha, "F");  
+    const alturaLinha = 10;
 
-    doc.setTextColor(255,255,255);  
+    function desenharCabecalho(){
 
-    doc.setFontSize(10);  
+        doc.setFillColor(15,92,122);
 
-    doc.text("Material", colunas.material + 2, y + 7);  
+        doc.rect(
+            10,
+            y,
+            190,
+            alturaLinha,
+            "F"
+        );
 
-    doc.text("Qtd", colunas.quantidade + 2, y + 7);  
+        doc.setTextColor(255,255,255);
 
-    doc.text("Funcionário", colunas.funcionario + 2, y + 7);  
+        doc.setFontSize(10);
 
-    doc.text("Data", colunas.data + 2, y + 7);  
+        doc.text(
+            "Material",
+            colunas.material + 2,
+            y + 7
+        );
 
-    doc.text("Hora", colunas.horario + 2, y + 7);  
+        doc.text(
+            "Qtd",
+            colunas.quantidade + 2,
+            y + 7
+        );
 
-    doc.text("Status", colunas.status + 2, y + 7);  
+        doc.text(
+            "Funcionário",
+            colunas.funcionario + 2,
+            y + 7
+        );
 
-    y += alturaLinha;  
+        doc.text(
+            "Data",
+            colunas.data + 2,
+            y + 7
+        );
 
-    doc.setTextColor(0,0,0);  
-}  
+        doc.text(
+            "Hora",
+            colunas.horario + 2,
+            y + 7
+        );
 
-desenharCabecalho();  
+        doc.text(
+            "Status",
+            colunas.status + 2,
+            y + 7
+        );
 
-// =====================================  
-// LINHAS  
-// =====================================  
+        y += alturaLinha;
 
-historico.forEach((item, index) => {  
+        doc.setTextColor(0,0,0);
+    }
 
-    // QUEBRA DE PÁGINA  
+    desenharCabecalho();
 
-    if(y > 270){  
+    historico.forEach((item, index) => {
 
-        doc.addPage();  
+        if(y > 270){
 
-        y = 20;  
+            doc.addPage();
 
-        desenharCabecalho();  
-    }  
+            y = 20;
 
-    // FUNDO ZEBRADO  
+            desenharCabecalho();
+        }
 
-    if(index % 2 === 0){  
+        if(index % 2 === 0){
 
-        doc.setFillColor(245,245,245);  
+            doc.setFillColor(245,245,245);
 
-        doc.rect(  
-            10,  
-            y,  
-            190,  
-            alturaLinha,  
-            "F"  
-        );  
-    }  
+            doc.rect(
+                10,
+                y,
+                190,
+                alturaLinha,
+                "F"
+            );
+        }
 
-    // BORDA  
+        doc.rect(
+            10,
+            y,
+            190,
+            alturaLinha
+        );
 
-    doc.rect(  
-        10,  
-        y,  
-        190,  
-        alturaLinha  
-    );  
+        doc.setFontSize(9);
 
-    // TEXTO  
+        doc.text(
+            String(item.material),
+            colunas.material + 2,
+            y + 7
+        );
 
-    doc.setFontSize(9);  
+        doc.text(
+            String(item.quantidade),
+            colunas.quantidade + 2,
+            y + 7
+        );
 
-    doc.text(  
-        String(item.material),  
-        colunas.material + 2,  
-        y + 7  
-    );  
+        doc.text(
+            String(item.funcionario),
+            colunas.funcionario + 2,
+            y + 7
+        );
 
-    doc.text(  
-        String(item.quantidade),  
-        colunas.quantidade + 2,  
-        y + 7  
-    );  
+        doc.text(
+            formatarData(item.data),
+            colunas.data + 2,
+            y + 7
+        );
 
-    doc.text(  
-        String(item.funcionario),  
-        colunas.funcionario + 2,  
-        y + 7  
-    );  
+        doc.text(
+            String(item.horario),
+            colunas.horario + 2,
+            y + 7
+        );
 
-    doc.text(  
-        formatarData(item.data),  
-        colunas.data + 2,  
-        y + 7  
-    );  
+        doc.text(
+            String(item.status),
+            colunas.status + 2,
+            y + 7
+        );
 
-    doc.text(  
-        String(item.horario),  
-        colunas.horario + 2,  
-        y + 7  
-    );  
+        y += alturaLinha;
 
-    doc.text(  
-        String(item.status),  
-        colunas.status + 2,  
-        y + 7  
-    );  
+        if(item.status === "extraviado"){
 
-    y += alturaLinha;  
+            doc.setFontSize(8);
 
-    // =====================================  
-    // MOTIVO EXTRAVIO  
-    // =====================================  
+            doc.setTextColor(180,0,0);
 
-    if(item.status === "extraviado"){  
+            doc.text(
+                `Motivo: ${item.motivo || "-"}`,
+                15,
+                y + 5
+            );
 
-        doc.setFontSize(8);  
+            doc.setTextColor(0,0,0);
 
-        doc.setTextColor(180,0,0);  
+            y += 10;
+        }
 
-        doc.text(  
-            `Motivo: ${item.motivo}`,  
-            15,  
-            y + 5  
-        );  
+    });
 
-        doc.setTextColor(0,0,0);  
+    doc.setFontSize(9);
 
-        y += 10;  
-    }  
+    doc.text(
+        `Gerado em: ${new Date().toLocaleString("pt-BR")}`,
+        10,
+        290
+    );
 
-});  
-
-// =====================================  
-// RODAPÉ  
-// =====================================  
-
-doc.setFontSize(9);  
-
-doc.text(  
-    `Gerado em: ${new Date().toLocaleString("pt-BR")}`,  
-    10,  
-    290  
-);  
-
-// =====================================  
-// SALVAR PDF  
-// =====================================  
-
-doc.save("relatorio-material.pdf");
-
+    doc.save("relatorio-material.pdf");
 }
+
+// ========================================
+// INICIAR
+// ========================================
 
 renderHistorico();
