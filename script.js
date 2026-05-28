@@ -284,80 +284,202 @@ function gerarPDF(){
 
     const { jsPDF } = window.jspdf;
 
-    const doc = new jsPDF();
+    const doc = new jsPDF("p", "mm", "a4");
 
-    let y = 20;
+    // =====================================
+    // TÍTULO
+    // =====================================
 
     doc.setFontSize(18);
 
     doc.text(
-        "Relatório - Bruna Construções",
-        20,
-        y
+        "Bruna Construções",
+        105,
+        15,
+        { align: "center" }
     );
 
-    y += 15;
+    doc.setFontSize(12);
 
-    historico.forEach(item => {
+    doc.text(
+        "Controle de Saída de Material",
+        105,
+        23,
+        { align: "center" }
+    );
 
-        doc.setFontSize(12);
+    // =====================================
+    // CONFIGURAÇÃO TABELA
+    // =====================================
 
-        doc.text(
-            `Material: ${item.material}`,
-            20,
-            y
-        );
+    let y = 35;
 
-        y += 8;
+    const colunas = {
+        material: 10,
+        quantidade: 55,
+        funcionario: 80,
+        data: 130,
+        horario: 155,
+        status: 180
+    };
 
-        doc.text(
-            `Quantidade: ${item.quantidade}`,
-            20,
-            y
-        );
+    // ALTURA LINHA
+    const alturaLinha = 10;
 
-        y += 8;
+    // =====================================
+    // CABEÇALHO
+    // =====================================
 
-        doc.text(
-            `Funcionário: ${item.funcionario}`,
-            20,
-            y
-        );
+    function desenharCabecalho(){
 
-        y += 8;
+        doc.setFillColor(15, 92, 122);
 
-        doc.text(
-            `Data: ${formatarData(item.data)}`,
-            20,
-            y
-        );
+        doc.rect(10, y, 190, alturaLinha, "F");
 
-        y += 8;
+        doc.setTextColor(255,255,255);
 
-        doc.text(
-            `Horário: ${item.horario}`,
-            20,
-            y
-        );
+        doc.setFontSize(10);
 
-        y += 8;
+        doc.text("Material", colunas.material + 2, y + 7);
 
-        doc.text(
-            `Status: ${item.status}`,
-            20,
-            y
-        );
+        doc.text("Qtd", colunas.quantidade + 2, y + 7);
 
-        y += 15;
+        doc.text("Funcionário", colunas.funcionario + 2, y + 7);
 
-        if(y > 260){
+        doc.text("Data", colunas.data + 2, y + 7);
+
+        doc.text("Hora", colunas.horario + 2, y + 7);
+
+        doc.text("Status", colunas.status + 2, y + 7);
+
+        y += alturaLinha;
+
+        doc.setTextColor(0,0,0);
+    }
+
+    desenharCabecalho();
+
+    // =====================================
+    // LINHAS
+    // =====================================
+
+    historico.forEach((item, index) => {
+
+        // QUEBRA DE PÁGINA
+
+        if(y > 270){
 
             doc.addPage();
 
             y = 20;
+
+            desenharCabecalho();
+        }
+
+        // FUNDO ZEBRADO
+
+        if(index % 2 === 0){
+
+            doc.setFillColor(245,245,245);
+
+            doc.rect(
+                10,
+                y,
+                190,
+                alturaLinha,
+                "F"
+            );
+        }
+
+        // BORDA
+
+        doc.rect(
+            10,
+            y,
+            190,
+            alturaLinha
+        );
+
+        // TEXTO
+
+        doc.setFontSize(9);
+
+        doc.text(
+            String(item.material),
+            colunas.material + 2,
+            y + 7
+        );
+
+        doc.text(
+            String(item.quantidade),
+            colunas.quantidade + 2,
+            y + 7
+        );
+
+        doc.text(
+            String(item.funcionario),
+            colunas.funcionario + 2,
+            y + 7
+        );
+
+        doc.text(
+            formatarData(item.data),
+            colunas.data + 2,
+            y + 7
+        );
+
+        doc.text(
+            String(item.horario),
+            colunas.horario + 2,
+            y + 7
+        );
+
+        doc.text(
+            String(item.status),
+            colunas.status + 2,
+            y + 7
+        );
+
+        y += alturaLinha;
+
+        // =====================================
+        // MOTIVO EXTRAVIO
+        // =====================================
+
+        if(item.status === "extraviado"){
+
+            doc.setFontSize(8);
+
+            doc.setTextColor(180,0,0);
+
+            doc.text(
+                `Motivo: ${item.motivo}`,
+                15,
+                y + 5
+            );
+
+            doc.setTextColor(0,0,0);
+
+            y += 10;
         }
 
     });
+
+    // =====================================
+    // RODAPÉ
+    // =====================================
+
+    doc.setFontSize(9);
+
+    doc.text(
+        `Gerado em: ${new Date().toLocaleString("pt-BR")}`,
+        10,
+        290
+    );
+
+    // =====================================
+    // SALVAR PDF
+    // =====================================
 
     doc.save("relatorio-material.pdf");
 }
