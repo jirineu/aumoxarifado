@@ -4,26 +4,45 @@ let historico =
 let idExtravio = null;
 
 const URL_APPS_SCRIPT =
-    "https://script.google.com/macros/s/AKfycbxSXMxe0Q4J1rrP9sMcVyL5Q2YzXrUlXMJPDcuW8Gpgb6RAsi1Bxl9fJ48nZc_-tiHXgw/exec";
+"https://script.google.com/macros/s/AKfycbxE3nHJoWKJ76aAEvdJ8WPxDIyr_nl2dZrh86RWR24giA67i4yqYUVMSNSmEQ2Vo6pvIA/exec";
+
 
 async function salvarDados(dados){
 
     try{
 
-        await fetch(URL_APPS_SCRIPT, {
+        const resposta = await fetch(
+            URL_APPS_SCRIPT,
+            {
 
-            method: "POST",
+                method: "POST",
 
-            headers: {
-                "Content-Type":
+                headers: {
+                    "Content-Type":
                     "application/json"
-            },
+                },
 
-            body: JSON.stringify(dados)
+                body: JSON.stringify(dados)
 
-        });
+            }
+        );
 
-        console.log("Salvo na planilha");
+        const resultado =
+            await resposta.json();
+
+        if(resultado.sucesso){
+
+            console.log(
+                "Salvo na planilha!"
+            );
+
+        }else{
+
+            console.error(
+                "Erro Apps Script:",
+                resultado.erro
+            );
+        }
 
     }catch(erro){
 
@@ -31,9 +50,7 @@ async function salvarDados(dados){
             "Erro ao salvar:",
             erro
         );
-
     }
-
 }
 
 function registrarSaida(){
