@@ -1,0 +1,82 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Controle de Saída de Material</title>
+
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Biblioteca PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+
+  <div class="container">
+
+    <header>
+      <h1>Bruna Construções</h1>
+      <p>Controle de Saída de Material</p>
+    </header>
+
+    <section class="form-section">
+
+      <div class="input-group">
+        <label>Nome do Material</label>
+        <input type="text" id="material" placeholder="Ex: Cimento">
+      </div>
+
+      <div class="input-group">
+        <label>Quantidade</label>
+        <input type="number" id="quantidade" placeholder="Ex: 10">
+      </div>
+
+      <button onclick="adicionarRegistro()">
+        Adicionar Registro
+      </button>
+
+    </section>
+
+    <section class="filtro-section">
+
+      <h2>Filtrar Histórico</h2>
+
+      <div class="filtro-container">
+
+        <div class="input-group">
+          <label>Data Inicial</label>
+          <input type="date" id="dataInicio">
+        </div>
+
+        <div class="input-group">
+          <label>Data Final</label>
+          <input type="date" id="dataFim">
+        </div>
+
+      </div>
+
+      <button class="btn-filtrar" onclick="filtrarHistorico()">
+        Filtrar
+      </button>
+
+      <button class="btn-pdf" onclick="gerarPDF()">
+        Gerar PDF
+      </button>
+
+    </section>
+
+    <section class="historico-section">
+
+      <h2>Histórico de Saída</h2>
+
+      <div id="historico"></div>
+
+    </section>
+
+  </div>
+
+  <script src="script.js"></script>
+
+</body>
+</html>
