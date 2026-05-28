@@ -1,112 +1,119 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Controle de Material</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Saída de Material</title>
 
-  <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css">
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
+
 <body>
 
-<div class="container">
+    <div class="container">
 
-  <header>
-    <h1>Bruna Construções</h1>
-    <p>Controle de Saída de Material</p>
-  </header>
+        <h1>Bruna Construções</h1>
+        <p class="subtitulo">
+            Controle de Saída de Material
+        </p>
 
-  <section class="form-section">
+        <!-- FORMULÁRIO -->
 
-    <div class="input-group">
-      <label>Nome do Funcionário</label>
-      <input type="text" id="funcionario" placeholder="Digite o nome">
+        <div class="card">
+
+            <h2>Registrar Saída</h2>
+
+            <label>Nome do Material</label>
+            <input type="text" id="material" placeholder="Digite o material">
+
+            <label>Quantidade</label>
+            <input type="number" id="quantidade" placeholder="Digite a quantidade">
+
+            <label>Funcionário</label>
+            <input type="text" id="funcionario" placeholder="Nome do funcionário">
+
+            <button onclick="registrarSaida()">
+                Registrar Saída
+            </button>
+
+        </div>
+
+        <!-- HISTÓRICO -->
+
+        <div class="card">
+
+            <div class="topo-historico">
+
+                <h2>Histórico do Dia</h2>
+
+                <button class="btn-filtro" onclick="abrirFiltro()">
+                    🔍
+                </button>
+
+            </div>
+
+            <div id="historico"></div>
+
+            <button class="btn-pdf" onclick="gerarPDF()">
+                Gerar PDF
+            </button>
+
+        </div>
+
     </div>
 
-    <div class="input-group">
-      <label>Material</label>
-      <input type="text" id="material" placeholder="Digite o material">
+    <!-- POPUP FILTRO -->
+
+    <div id="popupFiltro" class="popup">
+
+        <div class="popup-conteudo">
+
+            <h2>Filtrar Histórico</h2>
+
+            <label>Data Inicial</label>
+            <input type="date" id="dataInicial">
+
+            <label>Data Final</label>
+            <input type="date" id="dataFinal">
+
+            <button onclick="filtrarHistorico()">
+                Filtrar
+            </button>
+
+            <button onclick="fecharFiltro()">
+                Fechar
+            </button>
+
+        </div>
+
     </div>
 
-    <div class="input-group">
-      <label>Quantidade</label>
-      <input type="number" id="quantidade" placeholder="Digite a quantidade">
+    <!-- POPUP EXTRAVIO -->
+
+    <div id="popupExtravio" class="popup">
+
+        <div class="popup-conteudo">
+
+            <h2>Motivo do Extravio</h2>
+
+            <textarea
+                id="motivoExtravio"
+                placeholder="Explique o motivo..."
+            ></textarea>
+
+            <button onclick="confirmarExtravio()">
+                Confirmar
+            </button>
+
+        </div>
+
     </div>
 
-    <button onclick="adicionarRegistro()">
-      Registrar Saída
-    </button>
-
-  </section>
-
-  <section class="historico-section">
-
-    <div class="historico-topo">
-      <h2>Histórico do Dia</h2>
-
-      <button class="btn-filtro" onclick="abrirFiltro()">
-        Filtro
-      </button>
-    </div>
-
-    <div id="historico"></div>
-
-  </section>
-
-</div>
-
-<!-- POPUP FILTRO -->
-<div class="modal" id="modalFiltro">
-
-  <div class="modal-content">
-
-    <h3>Filtrar Histórico</h3>
-
-    <div class="input-group">
-      <label>Data Inicial</label>
-      <input type="date" id="dataInicio">
-    </div>
-
-    <div class="input-group">
-      <label>Data Final</label>
-      <input type="date" id="dataFim">
-    </div>
-
-    <button onclick="filtrarHistorico()">
-      Filtrar
-    </button>
-
-    <button class="btn-fechar" onclick="fecharFiltro()">
-      Fechar
-    </button>
-
-  </div>
-
-</div>
-
-<!-- POPUP EXTRAVIO -->
-<div class="modal" id="modalExtravio">
-
-  <div class="modal-content">
-
-    <h3>Motivo do Extravio</h3>
-
-    <textarea
-      id="motivoExtravio"
-      placeholder="Explique o motivo..."
-    ></textarea>
-
-    <button onclick="confirmarExtravio()">
-      Confirmar
-    </button>
-
-  </div>
-
-</div>
-
-<script src="script.js"></script>
+    <script src="script.js"></script>
 
 </body>
+
 </html>
