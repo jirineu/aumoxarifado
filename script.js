@@ -1,13 +1,24 @@
+let historico =
+JSON.parse(localStorage.getItem("historicoMateriais")) || [];
 
-
-let historico = JSON.parse(localStorage.getItem("historicoMateriais")) || [];
+let indiceExtravio = null;
 
 function adicionarRegistro(){
 
-  const material = document.getElementById("material").value;
-  const quantidade = document.getElementById("quantidade").value;
+  const funcionario =
+  document.getElementById("funcionario").value;
 
-  if(material === "" || quantidade === ""){
+  const material =
+  document.getElementById("material").value;
+
+  const quantidade =
+  document.getElementById("quantidade").value;
+
+  if(
+    funcionario === "" ||
+    material === "" ||
+    quantidade === ""
+  ){
     alert("Preencha todos os campos.");
     return;
   }
@@ -15,126 +26,250 @@ function adicionarRegistro(){
   const agora = new Date();
 
   const registro = {
-    material: material,
-    quantidade: quantidade,
-    data: agora.toLocaleDateString("pt-BR"),
-    horario: agora.toLocaleTimeString("pt-BR")
+
+    funcionario,
+    material,
+    quantidade,
+
+    dataISO: agora.toISOString(),
+
+    data:
+    agora.toLocaleDateString("pt-BR"),
+
+    horario:
+    agora.toLocaleTimeString("pt-BR"),
+
+    status:"pendente",
+
+    motivo:""
   };
 
   historico.push(registro);
+
+  salvar();
+
+  document.getElementById("funcionario").value = "";
+  document.getElementById("material").value = "";
+  document.getElementById("quantidade").value = "";
+
+  mostrarHistoricoHoje();
+}
+
+function salvar(){
 
   localStorage.setItem(
     "historicoMateriais",
     JSON.stringify(historico)
   );
 
-  document.getElementById("material").value = "";
-  document.getElementById("quantidade").value = "";
+}
 
-  renderizarHistorico(historico);
+function mostrarHistoricoHoje(){
+
+  const hoje = new Date();
+
+  const dataHoje =
+  hoje.toLocaleDateString("pt-BR");
+
+  const lista =
+  historico.filter(item => item.data === dataHoje);
+
+  renderizarHistorico(lista);
 }
 
 function renderizarHistorico(lista){
 
-  const historicoDiv = document.getElementById("historico");
+  const div =
+  document.getElementById("historico");
 
-  historicoDiv.innerHTML = "";
+  div.innerHTML = "";
 
   if(lista.length === 0){
-    historicoDiv.innerHTML = "<p>Nenhum registro encontrado.</p>";
+
+    div.innerHTML =
+    "<p>Nenhum registro encontrado.</p>";
+
     return;
   }
 
-  lista.forEach(item => {
+  lista.reverse().forEach((item) => {
 
-    historicoDiv.innerHTML += `
+    const index =
+    historico.indexOf(item);
+
+    let statusHTML = "";
+
+    if(item.status === "devolvido"){
+
+      statusHTML = `
+        <div class="status devolvido">
+          ✔ Material Devolvido
+        </div>
+      `;
+    }
+
+    if(item.status === "extraviado"){
+
+      statusHTML = `
+        <div class="status extraviado">
+          ✖ Material Extraviado
+        </div>
+
+        <div class="motivo">
+          <strong>Motivo:</strong>
+          ${item.motivo}
+        </div>
+      `;
+    }
+
+    div.innerHTML += `
+
       <div class="card">
+
         <h3>${item.material}</h3>
-        <p><strong>Quantidade:</strong> ${item.quantidade}</p>
-        <p><strong>Data:</strong> ${item.data}</p>
-        <p><strong>Horário:</strong> ${item.horario}</p>
+
+        <p>
+          <strong>Funcionário:</strong>
+          ${item.funcionario}
+        </p>
+
+        <p>
+          <strong>Quantidade:</strong>
+          ${item.quantidade}
+        </p>
+
+        <p>
+          <strong>Data:</strong>
+          ${item.data}
+        </p>
+
+        <p>
+          <strong>Horário:</strong>
+          ${item.horario}
+        </p>
+
+        ${
+          item.status === "pendente"
+          ?
+
+          `
+          <div class="acoes">
+
+            <button
+              class="btn-check"
+              onclick="marcarDevolvido(${index})"
+            >
+              ✔
+            </button>
+
+            <button
+              class="btn-x"
+              onclick="abrirExtravio(${index})"
+            >
+              ✖
+            </button>
+
+          </div>
+          `
+          :
+
+          statusHTML
+        }
+
       </div>
+
     `;
   });
 
 }
 
-function filtrarHistorico(){
+function marcarDevolvido(index){
 
-  const dataInicio = document.getElementById("dataInicio").value;
-  const dataFim = document.getElementById("dataFim").value;
+  historico[index].status = "devolvido";
 
-  if(dataInicio === "" || dataFim === ""){
-    renderizarHistorico(historico);
+  salvar();
+
+  mostrarHistoricoHoje();
+}
+
+function abrirExtravio(index){
+
+  indiceExtravio = index;
+
+  document.getElementById("modalExtravio")
+  .style.display = "flex";
+}
+
+function confirmarExtravio(){
+
+  const motivo =
+  document.getElementById("motivoExtravio").value;
+
+  if(motivo === ""){
+
+    alert("Explique o motivo.");
     return;
   }
 
-  const inicio = new Date(dataInicio);
-  const fim = new Date(dataFim);
+  historico[indiceExtravio].status =
+  "extraviado";
 
-  const filtrados = historico.filter(item => {
+  historico[indiceExtravio].motivo =
+  motivo;
 
-    const partes = item.data.split("/");
-    const dataRegistro = new Date(
-      `${partes[2]}-${partes[1]}-${partes[0]}`
-    );
+  salvar();
 
-    return dataRegistro >= inicio && dataRegistro <= fim;
-  });
+  document.getElementById("motivoExtravio")
+  .value = "";
 
-  renderizarHistorico(filtrados);
+  document.getElementById("modalExtravio")
+  .style.display = "none";
+
+  mostrarHistoricoHoje();
 }
 
-function gerarPDF(){
+function abrirFiltro(){
 
-  const { jsPDF } = window.jspdf;
-
-  const doc = new jsPDF();
-
-  doc.setFontSize(18);
-  doc.text("Bruna Construções", 20, 20);
-
-  doc.setFontSize(14);
-  doc.text("Relatório de Saída de Material", 20, 30);
-
-  let y = 45;
-
-  historico.forEach((item, index) => {
-
-    doc.setFontSize(12);
-
-    doc.text(
-      `${index + 1}. Material: ${item.material}`,
-      20,
-      y
-    );
-
-    y += 8;
-
-    doc.text(
-      `Quantidade: ${item.quantidade}`,
-      20,
-      y
-    );
-
-    y += 8;
-
-    doc.text(
-      `Data: ${item.data} | Horário: ${item.horario}`,
-      20,
-      y
-    );
-
-    y += 15;
-
-    if(y > 270){
-      doc.addPage();
-      y = 20;
-    }
-
-  });
-
-  doc.save("relatorio-materiais.pdf");
+  document.getElementById("modalFiltro")
+  .style.display = "flex";
 }
 
-renderizarHistorico(historico);
+function fecharFiltro(){
+
+  document.getElementById("modalFiltro")
+  .style.display = "none";
+
+  mostrarHistoricoHoje();
+}
+
+function filtrarHistorico(){
+
+  const inicio =
+  document.getElementById("dataInicio").value;
+
+  const fim =
+  document.getElementById("dataFim").value;
+
+  if(inicio === "" || fim === ""){
+
+    mostrarHistoricoHoje();
+
+    return;
+  }
+
+  const lista = historico.filter(item => {
+
+    const data =
+    new Date(item.dataISO);
+
+    return data >= new Date(inicio)
+    &&
+    data <= new Date(fim + "T23:59:59");
+  });
+
+  renderizarHistorico(lista);
+
+  fecharFiltro();
+}
+
+mostrarHistoricoHoje();
