@@ -3,20 +3,36 @@ let historico =
 
 let idExtravio = null;
 
-function salvarDados(){
+const URL_APPS_SCRIPT =
+    "COLE_A_URL_DO_APPS_SCRIPT";
 
-    localStorage.setItem(
-        "historico",
-        JSON.stringify(historico)
-    );
+async function salvarDados(dados){
 
-    // FUTURO GOOGLE APPS SCRIPT
-    /*
-    fetch("URL_APPS_SCRIPT",{
-        method:"POST",
-        body: JSON.stringify(historico)
-    });
-    */
+    try{
+
+        await fetch(URL_APPS_SCRIPT, {
+
+            method: "POST",
+
+            headers: {
+                "Content-Type":
+                    "application/json"
+            },
+
+            body: JSON.stringify(dados)
+
+        });
+
+        console.log("Salvo na planilha");
+
+    }catch(erro){
+
+        console.error(
+            "Erro ao salvar:",
+            erro
+        );
+
+    }
 
 }
 
