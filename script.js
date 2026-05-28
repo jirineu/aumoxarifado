@@ -144,7 +144,7 @@ function renderHistorico(lista = null){
 
                     `
                     <div class="status-devolvido">
-                        ✔ CHECKED
+                        ✔ Material devolvido/usado
                     </div>
                     `
 
