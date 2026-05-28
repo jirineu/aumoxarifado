@@ -383,3 +383,28 @@ function formatarData(data){
 // ========================================
 
 renderHistorico();
+
+function testeLocalStorage(){
+
+    const teste = {
+        nome: "Teste",
+        data: new Date().toLocaleString()
+    };
+
+    localStorage.setItem(
+        "teste",
+        JSON.stringify(teste)
+    );
+
+    const retorno =
+        JSON.parse(
+            localStorage.getItem("teste")
+        );
+
+    console.log(retorno);
+
+    alert(
+        "LocalStorage funcionando!\n\n" +
+        JSON.stringify(retorno)
+    );
+}
