@@ -2,121 +2,232 @@
 <html lang="pt-br">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Controle de Saída de Material</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <link rel="stylesheet" href="style.css">
+<title>Bruna Construções</title>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-    <div class="container">
-/*<button onclick="testeLocalStorage()">
-    Testar LocalStorage
-</button>*/
+<div class="app">
 
+    <!-- TOPO -->
+
+    <header class="topo">
         <h1>Bruna Construções</h1>
-        <p class="subtitulo">
-            Controle de Saída de Material
-        </p>
+    </header>
 
-        <!-- FORMULÁRIO -->
+    <!-- CONTEÚDO -->
 
-        <div class="card">
+    <main>
 
-            <h2>Registrar Saída</h2>
+        <!-- ========================= -->
+        <!-- ABA ESTOQUE -->
+        <!-- ========================= -->
 
-            <label>Nome do Material</label>
-            <input type="text" id="material" placeholder="Digite o material">
+        <section id="aba-estoque" class="aba ativa">
 
-            <label>Quantidade</label>
-            <input type="number" id="quantidade" placeholder="Digite a quantidade">
+            <div class="card">
 
-            <label>Funcionário</label>
-            <input type="text" id="funcionario" placeholder="Nome do funcionário">
+                <h2>Registrar Saída</h2>
 
-            <button onclick="registrarSaida()">
-                Registrar Saída
-            </button>
+                <label>Material</label>
+                <input type="text" id="material">
 
-        </div>
+                <label>Quantidade</label>
+                <input type="number" id="quantidade">
 
-        <!-- HISTÓRICO -->
+                <label>Funcionário</label>
+                <input type="text" id="funcionario">
 
-        <div class="card">
-
-            <div class="topo-historico">
-
-                <h2>Histórico do Dia</h2>
-
-                <button class="btn-filtro" onclick="abrirFiltro()">
-                    🔍
+                <button onclick="registrarSaida()">
+                    Registrar
                 </button>
 
             </div>
 
-            <div id="historico"></div>
+            <div class="card">
 
-            <button class="btn-pdf" onclick="gerarPDF()">
-                Gerar PDF
-            </button>
+                <h2>Histórico</h2>
+
+                <div id="historico"></div>
+
+            </div>
+
+        </section>
+
+        <!-- ========================= -->
+        <!-- ABA PONTO -->
+        <!-- ========================= -->
+
+        <section id="aba-ponto" class="aba">
+
+            <!-- CADASTRO -->
+
+            <div class="card">
+
+                <h2>Adicionar Funcionário</h2>
+
+                <label>Nome</label>
+                <input type="text" id="nomeFuncionario">
+
+                <label>Função</label>
+                <input type="text" id="funcaoFuncionario">
+
+                <label>Horário de Trabalho</label>
+                <input type="text" id="horarioFuncionario" placeholder="08:00 às 17:00">
+
+                <button onclick="salvarFuncionario()">
+                    Salvar Funcionário
+                </button>
+
+            </div>
+
+            <!-- FILTRO -->
+
+            <div class="card">
+
+                <input
+                    type="text"
+                    id="filtroFuncionario"
+                    placeholder="Buscar funcionário..."
+                    onkeyup="filtrarFuncionarios()"
+                >
+
+            </div>
+
+            <!-- FUNCIONÁRIOS -->
+
+            <div class="card">
+
+                <h2>Funcionários</h2>
+
+                <div id="listaFuncionarios"></div>
+
+            </div>
+
+            <!-- HISTÓRICO -->
+
+          <div class="card">
+
+    <div class="topo-historico">
+
+        <div>
+
+            <h2>Histórico de Pontos</h2>
+
+            <p id="dataAtual"></p>
 
         </div>
 
-    </div>
-
-    <!-- POPUP FILTRO -->
-
-    <div id="popupFiltro" class="popup">
-
-        <div class="popup-conteudo">
-
-            <h2>Filtrar Histórico</h2>
-
-            <label>Data Inicial</label>
-            <input type="date" id="dataInicial">
-
-            <label>Data Final</label>
-            <input type="date" id="dataFinal">
-
-            <button onclick="filtrarHistorico()">
-                Filtrar
-            </button>
-
-            <button onclick="fecharFiltro()">
-                Fechar
-            </button>
-
-        </div>
+        <button
+            class="btn-filtro"
+            onclick="abrirFiltroPonto()"
+        >
+            🔍
+        </button>
 
     </div>
 
-    <!-- POPUP EXTRAVIO -->
+    <div id="historicoPontos"></div>
 
-    <div id="popupExtravio" class="popup">
+</div>
 
-        <div class="popup-conteudo">
+        </section>
 
-            <h2>Motivo do Extravio</h2>
+        <!-- ========================= -->
+        <!-- ABA ARMÁRIOS -->
+        <!-- ========================= -->
 
-            <textarea
-                id="motivoExtravio"
-                placeholder="Explique o motivo..."
-            ></textarea>
+        <section id="aba-armarios" class="aba">
 
-            <button onclick="confirmarExtravio()">
-                Confirmar
-            </button>
+            <div class="card">
 
-        </div>
+                <h2>Armários</h2>
+
+                <div id="gradeArmarios"></div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- MENU INFERIOR -->
+
+    <nav class="menu">
+
+        <button onclick="abrirAba('estoque')">
+            Estoque
+        </button>
+
+        <button onclick="abrirAba('ponto')">
+            Ponto
+        </button>
+
+        <button onclick="abrirAba('armarios')">
+            Armários
+        </button>
+
+    </nav>
+
+</div>
+
+<!-- POPUP ARMÁRIO -->
+
+<div id="popupArmario" class="popup">
+
+    <div class="popup-conteudo">
+
+        <h2>Armário</h2>
+
+        <p id="infoArmario"></p>
+
+        <select id="selectFuncionario"></select>
+
+        <button onclick="vincularArmario()">
+            Salvar
+        </button>
+
+        <button onclick="fecharPopup()">
+            Fechar
+        </button>
 
     </div>
 
-    <script src="script.js"></script>
+</div>
+<!-- POPUP FILTRO PONTO -->
+
+<div id="popupFiltroPonto" class="popup">
+
+    <div class="popup-conteudo">
+
+        <h2>Filtrar Data</h2>
+
+        <input
+            type="date"
+            id="filtroPonto"
+        >
+
+        <button onclick="aplicarFiltroPonto()">
+            Filtrar
+        </button>
+
+        <button onclick="limparFiltroPonto()">
+            Hoje
+        </button>
+
+        <button onclick="fecharFiltroPonto()">
+            Fechar
+        </button>
+
+    </div>
+
+</div>
+<script src="app.js"></script>
 
 </body>
-
 </html>
