@@ -14,6 +14,8 @@ JSON.parse(localStorage.getItem("pontos")) || [];
 let armarios =
 JSON.parse(localStorage.getItem("armarios")) || [];
 
+let idFuncionarioEditando = null; // Guarda o ID se for edição, ou null se for cadastro novo
+
 // ===========================
 // CRIAR ARMÁRIOS
 // ===========================
@@ -67,7 +69,8 @@ async function salvarTudo(){
         "armarios",
         JSON.stringify(armarios)
     );
-
+let relatorioRefeicoes = 
+JSON.parse(localStorage.getItem("relatorioRefeicoes")) || [];
     // =================================
     // EVITA MUITAS REQUISIÇÕES
     // =================================
@@ -97,7 +100,8 @@ async function salvarTudo(){
                         historico,
                         funcionarios,
                         pontos,
-                        armarios
+                        armarios,
+                        relatorioRefeicoes
 
                     })
 
@@ -108,6 +112,12 @@ async function salvarTudo(){
             console.log(
                 "Dados enviados para planilha"
             );
+            
+            // ==========================================================
+            // CORREÇÃO AQUI: Atualiza as tabelas assim que o envio termina!
+            // ==========================================================
+            renderHistoricoPontos();
+            renderFuncionarios();
 
         }catch(erro){
 
@@ -199,6 +209,41 @@ function renderHistorico(){
 
     div.innerHTML = "";
 
+    // ==========================================
+    // FUNÇÃO INTERNA PARA LIMPAR A DATA DO ESTOQUE
+    // ==========================================
+    const extrairDataEstoqueLimpa = (valorData) => {
+        if (!valorData) return "";
+        let texto = String(valorData).trim();
+
+        // 1. Se for uma data longa por extenso (ex: "Wed Jun 03 2026 13:25:00 GMT..."),
+        // tenta converter e isolar de forma legível
+        if (texto.length > 15 && texto.includes("GMT")) {
+            try {
+                const dataObj = new Date(texto);
+                if (!isNaN(dataObj.getTime())) {
+                    const dataBR = dataObj.toLocaleDateString("pt-BR");
+                    const horaBR = dataObj.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+                    return `${dataBR} às ${horaBR}`;
+                }
+            } catch (e) {}
+        }
+
+        // 2. Se for formato ISO / JSON (ex: "2026-06-03T13:25:00.000Z")
+        if (texto.includes("T") && texto.includes("-")) {
+            try {
+                const dataObj = new Date(texto);
+                if (!isNaN(dataObj.getTime())) {
+                    const dataBR = dataObj.toLocaleDateString("pt-BR");
+                    const horaBR = dataObj.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+                    return `${dataBR} às ${horaBR}`;
+                }
+            } catch (e) {}
+        }
+
+        return texto;
+    };
+
     historico.forEach(item => {
 
         // CORRIGE ITENS ANTIGOS
@@ -221,6 +266,9 @@ function renderHistorico(){
 
         }
 
+        // Limpa a data e hora do item do histórico antes de exibir
+        const dataExibicao = extrairDataEstoqueLimpa(item.data);
+
         div.innerHTML += `
 
         <div class="historico-item">
@@ -231,7 +279,7 @@ function renderHistorico(){
 
             <p>${item.funcionario}</p>
 
-            <p>${item.data}</p>
+            <p>${dataExibicao}</p>
 
             ${
                 item.status === "pendente"
@@ -296,8 +344,6 @@ function renderHistorico(){
 
     });
 
-    
-
 }
 
 // ===========================
@@ -312,38 +358,76 @@ function salvarFuncionario(){
     const funcao =
     document.getElementById("funcaoFuncionario").value;
 
-    const horario =
-    document.getElementById("horarioFuncionario").value;
+    // CAPTURA OS NOVOS CAMPOS DO FORMULÁRIO
+    const entrada =
+    document.getElementById("entradaFuncionario").value;
 
-    if(!nome || !funcao || !horario){
+    const saida =
+    document.getElementById("saidaFuncionario").value;
+
+    const alojamento =
+    document.getElementById("alojamentoFuncionario").value;
+
+    const vr =
+    document.getElementById("vrFuncionario").value;
+
+    // VALIDAÇÃO: Garante que todos os campos obrigatórios estejam preenchidos
+    if(!nome || !funcao || !entrada || !saida){
+        mostrarToast("Por favor, preencha todos os campos do funcionário.");
         return;
     }
 
-    funcionarios.push({
-        id:Date.now(),
-        nome,
-        funcao,
-        horario
-    });
+    // VERIFICA SE ESTÁ EDITANDO OU CRIANDO UM NOVO
+    if (idFuncionarioEditando !== null) {
+        // Localiza o funcionário existente pelo ID guardado no controle de edição
+        const funcionario = funcionarios.find(f => f.id === idFuncionarioEditando);
+        
+        if (funcionario) {
+            funcionario.nome = nome;
+            funcionario.funcao = funcao;
+            funcionario.entrada = Number(entrada);
+            funcionario.saida = Number(saida);
+            funcionario.alojamento = alojamento;
+            funcionario.vr = vr;
+            
+            mostrarToast("Funcionário atualizado com sucesso!");
+        }
+        // Reseta o controle de edição para os próximos cliques voltarem a ser novos cadastros
+        idFuncionarioEditando = null;
+    } else {
+        // ADICIONA O NOVO FUNCIONÁRIO AO ARRAY COM TODAS AS NOVAS VARIÁVEIS
+        funcionarios.push({
+            id: Date.now(),
+            nome,
+            funcao,
+            entrada: Number(entrada), // Salva como número inteiro puro (ex: 8)
+            saida: Number(saida),     // Salva como número inteiro puro (ex: 17)
+            alojamento,               // "Sim" ou "Não"
+            vr                        // "Sim" ou "Não"
+        });
 
+        mostrarToast("Funcionário cadastrado com sucesso!");
+    }
+
+    // Salva tudo localmente e envia para a planilha
     salvarTudo();
 
+    // Atualiza a interface visual
     renderFuncionarios();
 
-}
+    // LIMPA OS CAMPOS DO FORMULÁRIO APÓS SALVAR
+    document.getElementById("nomeFuncionario").value = "";
+    document.getElementById("funcaoFuncionario").value = "";
+    document.getElementById("entradaFuncionario").value = "";
+    document.getElementById("saidaFuncionario").value = "";
+    document.getElementById("alojamentoFuncionario").value = "Não";
+    document.getElementById("vrFuncionario").value = "Não";
 
-function funcionarioBateuHoje(id){
-
-    const hoje =
-    new Date().toLocaleDateString("pt-BR");
-
-    return pontos.some(p =>
-
-        p.funcionarioId === id &&
-        p.data === hoje
-
-    );
-
+    // Restaura o texto padrão do botão caso ele tenha sido alterado pela função editar
+    const botaoSalvar = document.querySelector("button[onclick='salvarFuncionario()']");
+    if (botaoSalvar) {
+        botaoSalvar.textContent = "Salvar Funcionário";
+    }
 }
 
 function renderFuncionarios(lista = funcionarios){
@@ -353,23 +437,56 @@ function renderFuncionarios(lista = funcionarios){
 
     div.innerHTML = "";
 
+    const hoje = new Date().toLocaleDateString("pt-BR");
+    const agoraTimestamp = new Date().getTime();
+    const tresHorasEmMs = 3 * 60 * 60 * 1000; // 3 horas em milissegundos
+
     lista.forEach(funcionario => {
 
-        const bateu =
-        funcionarioBateuHoje(funcionario.id);
+        // Busca o registro de ponto do funcionário para o dia de hoje
+        const registro = pontos.find(p => p.funcionarioId === funcionario.id && p.data === hoje);
+
+        let classeStatus = "vermelho"; // Padrão: Não bateu o ponto ainda
+
+        if (registro) {
+            if (registro.saida) {
+                // 4ª Batida realizada: Saída Final
+                classeStatus = "azul";
+            } 
+            else if (registro.almocoRetorno) {
+                // 3ª Batida realizada: Volta do Almoço
+                classeStatus = "laranja";
+            } 
+            else if (registro.almocoSaida) {
+                // 2ª Batida realizada: Saída para Almoço
+                classeStatus = "verde";
+            } 
+            else if (registro.entrada) {
+                // 1ª Batida realizada: Entrada do dia
+                // Verifica se já se passaram mais de 3 horas desde a entrada
+                const tempoDecorrido = agoraTimestamp - (registro.timestampEntrada || agoraTimestamp);
+                
+                if (tempoDecorrido > tresHorasEmMs) {
+                    classeStatus = "laranja"; // Passou de 3 horas
+                } else {
+                    classeStatus = "verde"; // Menos de 3 horas
+                }
+            }
+        }
+
+        // Garante a exibição correta dos horários do contrato
+        const entradaExibicao = (funcionario.entrada !== undefined && funcionario.entrada !== null) ? funcionario.entrada : "--";
+        const saidaExibicao = (funcionario.saida !== undefined && funcionario.saida !== null) ? funcionario.saida : "--";
 
         div.innerHTML += `
 
-        <div class="
-            funcionario
-            ${bateu ? 'verde' : 'vermelho'}
-        ">
+        <div class="funcionario ${classeStatus}">
 
             <strong>${funcionario.nome}</strong>
 
-            <p>${funcionario.funcao}</p>
+            <p>Função: ${funcionario.funcao}</p>
 
-            <p>${funcionario.horario}</p>
+            <p>Horário: ${entradaExibicao}h às ${saidaExibicao}h</p>
 
             <div class="botoes">
 
@@ -396,102 +513,126 @@ function renderFuncionarios(lista = funcionarios){
     });
 
 }
-
 function editarFuncionario(id){
-
-    const funcionario =
-    funcionarios.find(f => f.id === id);
-
+    const funcionario = funcionarios.find(f => f.id === id);
     if(!funcionario) return;
 
-    const nome =
-    prompt("Nome", funcionario.nome);
+    // Guarda o ID do funcionário que estamos editando
+    idFuncionarioEditando = id;
 
-    const funcao =
-    prompt("Função", funcionario.funcao);
+    // Preenche os campos do formulário de criação com os dados atuais dele
+    document.getElementById("nomeFuncionario").value = funcionario.nome;
+    document.getElementById("funcaoFuncionario").value = funcionario.funcao;
+    document.getElementById("entradaFuncionario").value = funcionario.entrada || "";
+    document.getElementById("saidaFuncionario").value = funcionario.saida || "";
+    document.getElementById("alojamentoFuncionario").value = funcionario.alojamento || "Não";
+    document.getElementById("vrFuncionario").value = funcionario.vr || "Não";
 
-    const horario =
-    prompt("Horário", funcionario.horario);
+    // Altera o texto do botão de salvar para dar um feedback visual
+    const botaoSalvar = document.querySelector("button[onclick='salvarFuncionario()']");
+    if(botaoSalvar) {
+        botaoSalvar.textContent = "Atualizar Dados";
+    }
 
-    funcionario.nome = nome;
-    funcionario.funcao = funcao;
-    funcionario.horario = horario;
-
-    salvarTudo();
-
-    renderFuncionarios();
-
+    // Alerta discreto avisando que os dados subiram para o formulário
+    mostrarToast("Dados carregados no formulário acima!");
+    
+    // Opcional: Rola a tela suavemente para o topo onde está o formulário
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 // ===========================
 // BATER PONTO
 // ===========================
+function mostrarToast(mensagem) {
+    // Cria o elemento do toast
+    const toast = document.createElement("div");
+    toast.textContent = message = mensagem;
+    
+    // Aplica o estilo do Toast diretamente para ficar no topo e disfarçado
+    Object.assign(toast.style, {
+        position: "fixed",
+        top: "20px",
+        left: "50%",
+        transform: "translateX(-50%)",
+        backgroundColor: "#333",
+        color: "#fff",
+        padding: "12px 24px",
+        borderRadius: "8px",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+        zIndex: "10000",
+        fontFamily: "Arial, sans-serif",
+        fontSize: "14px",
+        transition: "opacity 0.3s ease",
+        opacity: "0",
+        textAlign: "center",
+        pointerEvents: "none"
+    });
 
-function baterPonto(id){
+    document.body.appendChild(toast);
 
-    const hoje =
-    new Date().toLocaleDateString("pt-BR");
+    // Faz o efeito de aparecer (fade-in)
+    setTimeout(() => { toast.style.opacity = "1"; }, 50);
 
-    const horario =
-    new Date().toLocaleTimeString(
-        "pt-BR",
-        {
-            hour:"2-digit",
-            minute:"2-digit"
-        }
-    );
+    // Some e remove do mapa após 3 segundos
+    setTimeout(() => {
+        toast.style.opacity = "0";
+        setTimeout(() => { toast.remove(); }, 300);
+    }, 3000);
+}
+// ======================================
+// BATER PONTO (LOGICA DE 4 BATIDAS E CORES)
+// ======================================
+function baterPonto(id) {
+    const hoje = new Date().toLocaleDateString("pt-BR");
+    const agora = new Date();
+    const horario = agora.toLocaleTimeString("pt-BR", {
+        hour: "2-digit",
+        minute: "2-digit"
+    });
 
-    let registro =
-    pontos.find(p =>
+    let registro = pontos.find(p => p.funcionarioId === id && p.data === hoje);
 
-        p.funcionarioId === id &&
-        p.data === hoje
-
-    );
-
-    // PRIMEIRA BATIDA = ENTRADA
-
-    if(!registro){
-
+    // Se ainda não existe registro hoje, cria a PRIMEIRA BATIDA (Entrada)
+    if (!registro) {
         pontos.unshift({
-
-            funcionarioId:id,
-
-            data:hoje,
-
-            entrada:horario,
-
-            saida:""
-
+            funcionarioId: id,
+            data: hoje,
+            entrada: horario,
+            almocoSaida: "",
+            almocoRetorno: "",
+            saida: "",
+            timestampEntrada: agora.getTime(),
+            timestampRetorno: 0
         });
-
-    }
-
-    // SEGUNDA BATIDA = SAÍDA
-
-    else if(!registro.saida){
-
+        mostrarToast("Entrada registrada com sucesso!");
+    } 
+    // SEGUNDA BATIDA: Saída para o Almoço
+    else if (!registro.almocoSaida) {
+        registro.almocoSaida = horario;
+        mostrarToast("Saída para o almoço registrada!");
+    } 
+    // TERCEIRA BATIDA: Volta do Almoço
+    else if (!registro.almocoRetorno) {
+        registro.almocoRetorno = horario;
+        registro.timestampRetorno = agora.getTime(); // Guarda o momento exato da volta do almoço
+        mostrarToast("Retorno do almoço registrado!");
+    } 
+    // QUARTA BATIDA: Saída do Expediente
+    else if (!registro.saida) {
         registro.saida = horario;
-
+        mostrarToast("Saída do expediente registrada! Ponto finalizado.");
+    } 
+    else {
+        return mostrarToast("Todos os 4 pontos deste funcionário já foram batidos hoje.");
     }
 
-    // SE JÁ TIVER ENTRADA E SAÍDA
-    // NÃO FAZ NADA
-
-    else{
-
-        return alert(
-            "Ponto deste funcionário já finalizado hoje."
-        );
-
-    }
-
+    // Salva localmente e envia para a planilha de fundo (aciona o fetch em background)
     salvarTudo();
-
+    
+    // Atualiza a interface visual das listas no front-end
     renderFuncionarios();
-
     renderHistoricoPontos();
-
 }
 
 // ===========================
@@ -505,21 +646,67 @@ function renderHistoricoPontos(){
 
     div.innerHTML = "";
 
-    const filtro =
-    document.getElementById("filtroPonto").value;
+    // ==========================================================
+    // FILTRO DIÁRIO TRAVADO: Pega estritamente a data de hoje (DD/MM/AAAA)
+    // ==========================================================
+    const dataHojeBR = new Date().toLocaleDateString("pt-BR");
+
+    // ==========================================
+    // TRATAMENTO EXCLUSIVO PARA ENTRADA E SAÍDA
+    // ==========================================
+    const extrairApenasHora = (valor) => {
+        if (!valor) return "--";
+        
+        let texto = String(valor).trim();
+
+        if (texto.length > 15) {
+            const matchHoraCompleta = texto.match(/\b\d{2}:\d{2}:\d{2}\b/);
+            if (matchHoraCompleta && matchHoraCompleta[0] !== "00:00:00") {
+                return matchHoraCompleta[0].substring(0, 5);
+            }
+        }
+
+        const matchSimples = texto.match(/\d{2}:\d{2}/);
+        if (matchSimples) {
+            return matchSimples[0];
+        }
+
+        return texto;
+    };
+
+    // ==========================================
+    // TRATAMENTO EXCLUSIVO PARA O CAMPO DA DATA
+    // ==========================================
+    const extrairApenasData = (valorData) => {
+        if (!valorData) return "";
+        let texto = String(valorData).trim();
+
+        if (texto.length > 15 && texto.includes("GMT")) {
+            try {
+                const dataObj = new Date(texto);
+                if (!isNaN(dataObj.getTime())) {
+                    return dataObj.toLocaleDateString("pt-BR");
+                }
+            } catch (e) {}
+        }
+        
+        if (texto.includes("-") && texto.length <= 10) {
+            const partes = texto.split("-");
+            if (partes.length === 3 && partes[0].length === 4) {
+                return `${partes[2]}/${partes[1]}/${partes[0]}`;
+            }
+        }
+
+        return texto;
+    };
 
     pontos.forEach(ponto => {
 
-        if(filtro){
+        const dataPontoFormatada = extrairApenasData(ponto.data);
 
-            const dataFiltro =
-            new Date(filtro)
-            .toLocaleDateString();
-
-            if(ponto.data !== dataFiltro){
-                return;
-            }
-
+        // TRAVA O FILTRO: Se o ponto não for de hoje, ele ignora e pula para o próximo
+        if (dataPontoFormatada !== dataHojeBR) {
+            return;
         }
 
         const funcionario =
@@ -529,19 +716,29 @@ function renderHistoricoPontos(){
 
         if(!funcionario) return;
 
+        // Limpa e formata as 4 batidas capturadas do objeto do ponto
+        const entradaLimpa = extrairApenasHora(ponto.entrada);
+        const almocoSaidaLimpa = extrairApenasHora(ponto.almocoSaida);
+        const almocoRetornoLimpa = extrairApenasHora(ponto.almocoRetorno);
+        const saidaLimpa = extrairApenasHora(ponto.saida);
+        const dataExibicao = dataPontoFormatada;
+
         div.innerHTML += `
 
         <div class="historico-item">
 
             <strong>${funcionario.nome}</strong>
 
-            <p>${funcionario.funcao}</p>
+            <p>Função: ${funcionario.funcao}</p>
 
-            <p>Entrada: ${ponto.entrada}</p>
+            <p>Entrada: ${entradaLimpa}</p>
+            <p>Saída Almoço: ${almocoSaidaLimpa}</p>
+            <p>Volta Almoço: ${almocoRetornoLimpa}</p>
+            <p>Saída Final: ${saidaLimpa}</p>
 
-            <p>Saída: ${ponto.saida || '--'}</p>
-
-            <p>${ponto.data}</p>
+            <small style="display: block; margin-top: 5px; color: #666;">
+                Data: ${dataExibicao}
+            </small>
 
         </div>
 
@@ -583,108 +780,81 @@ function filtrarFuncionarios(){
 
 let armarioAtual = null;
 
-function renderArmarios(){
+// ======================================
+// ABA ARMÁRIOS - CONTROLE DE INTERFACE (FRONT-END)
+// ======================================
 
-    const div =
-    document.getElementById("gradeArmarios");
+/**
+ * 1. RENDERIZA A GRADE DE ARMÁRIOS na tela
+ */
+function renderArmarios() {
+    const div = document.getElementById("gradeArmarios");
+    if (!div) return;
 
-    div.innerHTML = "";
-
-    armarios.forEach(armario => {
-
-        div.innerHTML += `
-
-        <div
-            class="
-                armario
-                ${armario.funcionario ? 'ocupado' : 'livre'}
-            "
-            onclick="abrirArmario(${armario.numero})"
-        >
-
-            ${armario.numero}
-
-        </div>
-
+    // Monta o HTML em memória para melhor performance e evitar travamentos
+    const htmlArmarios = armarios.map(armario => {
+        const classeStatus = armario.funcionario ? 'ocupado' : 'livre';
+        return `
+            <div class="armario ${classeStatus}" onclick="abrirArmario(${armario.numero})">
+                ${armario.numero}
+            </div>
         `;
-
     });
 
+    div.innerHTML = htmlArmarios.join("");
 }
 
-function abrirArmario(numero){
-
+/**
+ * 2. ABRE O POPUP do armário selecionado
+ */
+function abrirArmario(numero) {
     armarioAtual = numero;
+    const armario = armarios.find(a => a.numero === numero);
+    if (!armario) return;
 
-    const armario =
-    armarios.find(a => a.numero === numero);
+    // Exibe o popup
+    document.getElementById("popupArmario").style.display = "flex";
 
-    document.getElementById(
-        "popupArmario"
-    ).style.display = "flex";
+    // Define a mensagem interna com base na ocupação
+    document.getElementById("infoArmario").innerHTML = armario.funcionario
+        ? `Pertence a <strong>${armario.funcionario}</strong>`
+        : `Armário vazio`;
 
-    document.getElementById(
-        "infoArmario"
-    ).innerHTML =
-
-    armario.funcionario
-
-    ?
-
-    `Pertence a ${armario.funcionario}`
-
-    :
-
-    `Armário vazio`;
-
-    const select =
-    document.getElementById(
-        "selectFuncionario"
-    );
-
-    select.innerHTML = "";
-
-    funcionarios.forEach(f => {
-
-        select.innerHTML += `
-            <option value="${f.nome}">
-                ${f.nome}
-            </option>
-        `;
-
-    });
-
+    // Alimenta o select com a lista de funcionários ativos
+    const select = document.getElementById("selectFuncionario");
+    if (select) {
+        select.innerHTML = funcionarios.map(f => `
+            <option value="${f.nome}">${f.nome}</option>
+        `).join("");
+    }
 }
 
-function vincularArmario(){
+/**
+ * 3. VINCULA O FUNCIONÁRIO AO ARMÁRIO (Botão Salvar)
+ */
+function vincularArmario() {
+    const select = document.getElementById("selectFuncionario");
+    if (!select) return;
 
-    const funcionario =
-    document.getElementById(
-        "selectFuncionario"
-    ).value;
+    const funcionario = select.value;
+    const armario = armarios.find(a => a.numero === armarioAtual);
 
-    const armario =
-    armarios.find(a =>
-        a.numero === armarioAtual
-    );
+    if (armario) {
+        armario.funcionario = funcionario;
 
-    armario.funcionario =
-    funcionario;
-
-    salvarTudo();
-
-    fecharPopup();
-
-    renderArmarios();
-
+        // Dispara o ciclo de sincronização unificado
+        salvarTudo(); 
+        fecharPopup();
+        renderArmarios();
+    }
 }
 
-function fecharPopup(){
-
-    document.getElementById(
-        "popupArmario"
-    ).style.display = "none";
-
+/**
+ * 4. FECHA O POPUP da tela
+ */
+function fecharPopup() {
+    const popup = document.getElementById("popupArmario");
+    if (popup) popup.style.display = "none";
 }
 
 let idExtravio = null;
@@ -760,6 +930,223 @@ function confirmarExtravio(){
 
 }
 
+// ======================================
+// BUSCAR DADOS DA PLANILHA E ATUALIZAR LOCALSTORAGE
+// ======================================
+async function atualizarDadosDaPlanilha() {
+    // Seleciona o botão de atualizar para dar um feedback visual ao usuário
+    const botao = document.querySelector("button[onclick='atualizarDadosDaPlanilha()']");
+    const textoOriginal = botao.innerHTML;
+    
+    try {
+        // Efeito visual de carregando
+        botao.innerHTML = "⌛";
+        botao.disabled = true;
+
+        // URL gerada na implantação do seu Google Apps Script
+        const urlWebApp = "https://script.google.com/macros/s/AKfycbw36Zv_IdusCQWqMsqswymxSNQ5NjDULUQ_KebVRonzRTPR7Z6rDTtXqwfRodRc6guMPg/exec"; 
+        
+        const resposta = await fetch(urlWebApp);
+        const dados = await resposta.json();
+        
+        if (dados.sucesso) {
+            // CORREÇÃO DE SEGURANÇA: Cancela qualquer edição ativa se os dados forem atualizados no meio do processo
+            idFuncionarioEditando = null;
+            const botaoSalvar = document.querySelector("button[onclick='salvarFuncionario()']");
+            if (botaoSalvar) { botaoSalvar.textContent = "Salvar Funcionário"; }
+
+            // 1. Atualiza as variáveis na memória RAM do sistema
+            funcionarios = dados.funcionarios || [];
+            historico = dados.historico || [];
+            pontos = dados.pontos || [];
+            armarios = dados.armarios || [];
+            
+            // ==========================================================
+            // SALVAMENTO FORÇADO: Deleta o lixo antigo do LocalStorage primeiro
+            // ==========================================================
+            localStorage.removeItem("funcionarios");
+            localStorage.removeItem("historico");
+            localStorage.removeItem("pontos");
+            localStorage.removeItem("armarios");
+
+            // 2. Grava os dados novos e limpos da planilha com os inteiros puros
+            localStorage.setItem("funcionarios", JSON.stringify(funcionarios));
+            localStorage.setItem("historico", JSON.stringify(historico));
+            localStorage.setItem("pontos", JSON.stringify(pontos));
+            localStorage.setItem("armarios", JSON.stringify(armarios));
+            
+            // 3. Renderiza novamente os componentes da tela com a nova memória limpa
+            renderFuncionarios();       // Mostrará os inteiros corretos agora
+            renderHistorico();
+            renderHistoricoPontos();    
+            renderArmarios();
+            
+            // Limpa o campo de busca de funcionário se ele existir, para mostrar a lista completa atualizada
+            const filtro = document.getElementById("filtroFuncionario");
+            if (filtro) { filtro.value = ""; }
+
+            // Usa o seu Toast no topo da tela
+            mostrarToast("Dados atualizados e limpos com sucesso!");
+        } else {
+            // Usa o seu Toast no topo da tela em caso de erro da resposta
+            mostrarToast("Erro ao sincronizar: " + dados.erro);
+        }
+
+    } catch (erro) {
+        console.error("Erro na requisição GET:", erro);
+        // Usa o seu Toast no topo da tela em caso de falha de conexão
+        mostrarToast("Não foi possível buscar os dados. Verifique sua conexão.");
+    } finally {
+        // Restaura o botão ao estado original
+        botao.innerHTML = textoOriginal;
+        botao.disabled = false;
+    }
+}
+
+// ===========================
+// ABA FOOD
+// ===========================
+// Variável global para gerenciar a lista em memória
+let listaFoodAtual = [];
+
+/**
+ * 1. CONTROLE DE NAVEGAÇÃO
+ * Garante a abertura da aba correspondente e esconde as demais
+ */
+function abrirAba(nomeAba) {
+    // Localiza todas as seções possíveis do app pelas classes e IDs padrão
+    const todasAsAbas = document.querySelectorAll('.aba, .secao-aba, [id^="aba-"]');
+    todasAsAbas.forEach(aba => {
+        aba.style.display = 'none';
+    });
+
+    // Ativa a aba selecionada
+    const abaAlvo = document.getElementById('aba-' + nomeAba);
+    if (abaAlvo) {
+        abaAlvo.style.display = 'block';
+        
+        // Se abrir a aba food, redesenha o estado atual da lista na tela
+        if (nomeAba === 'food') {
+            renderListaFood();
+        }
+    } else {
+        console.error("Aba não encontrada: aba-" + nomeAba);
+    }
+}
+
+/**
+ * 2. PROCESSAMENTO E FILTRAGEM (Botão Gerar Lista)
+ * Filtra os funcionários baseando-se nas regras de VR e ponto de Entrada do dia
+ */
+
+
+/**
+ * 3. RENDERIZAÇÃO DA TELA E CONTADOR
+ * Constrói o HTML interno com os botões de exclusão e soma o totalizador
+ */
+function renderListaFood() {
+    const divConteudo = document.getElementById("conteudoListaFood");
+    const divSoma = document.getElementById("resultadoSomaFood");
+    const spanTotal = document.getElementById("totalRefeicoes");
+
+    if (!divConteudo) return;
+
+    // Reseta o container antes de desenhar
+    divConteudo.innerHTML = "";
+
+    // Se a lista estiver vazia (ou antes de gerar)
+    if (listaFoodAtual.length === 0) {
+        divConteudo.innerHTML = `<p class="food-vazio">Nenhum funcionário na lista de hoje.</p>`;
+        if (divSoma) divSoma.style.display = "none";
+        return;
+    }
+
+    // Alimenta a lista gerando a estrutura com as classes CSS corretas
+    listaFoodAtual.forEach((funcionario, index) => {
+        divConteudo.innerHTML += `
+            <div class="food-item">
+                <div class="food-info">
+                    <strong>${funcionario.nome}</strong>
+                    <span>ID: ${funcionario.id} | ${funcionario.funcao}</span>
+                </div>
+                <button class="btn-excluir-food" onclick="removerDaListaFood(${index})">❌ Excluir</button>
+            </div>
+        `;
+    });
+
+    // Atualiza o painel do somatório totalizador
+    if (divSoma && spanTotal) {
+        spanTotal.textContent = listaFoodAtual.length;
+        divSoma.style.display = "block";
+    }
+    
+}
+
+/**
+ * 4. EXCLUSÃO INDIVIDUAL (Botão Excluir)
+ * Remove o funcionário da lista temporária do dia sem afetar o banco principal
+ */
+function removerDaListaFood(index) {
+    if (index >= 0 && index < listaFoodAtual.length) {
+        // Remove do array pelo índice
+        listaFoodAtual.splice(index, 1);
+        // Atualiza a tela e o contador imediatamente
+        renderListaFood();
+    }
+}
+
+/**
+ * FUNÇÃO DO BOTÃO "GERAR LISTA" (No app.js)
+ * Filtra os funcionários, atualiza a tela e adiciona o relatório no pacote de salvamento.
+ */
+function gerarListaFood() {
+    const agora = new Date();
+    const hoje = agora.toLocaleDateString("pt-BR");
+    const hora = agora.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+    
+    if (!funcionarios || !pontos) {
+        console.error("Dados de funcionários ou pontos não carregados.");
+        return;
+    }
+
+    // 1. Filtra quem NÃO tem VR marcado como "Sim"
+    const semVR = funcionarios.filter(f => !f.vr || String(f.vr).trim().toLowerCase() !== "sim");
+
+    // 2. Mantém apenas quem registrou a entrada hoje
+    listaFoodAtual = semVR.filter(f => {
+        const bateuHoje = pontos.find(p => Number(p.funcionarioId) === Number(f.id) && p.data === hoje);
+        return bateuHoje && bateuHoje.entrada;
+    });
+
+    // 3. Desenha a lista atualizada na tela do usuário
+    renderListaFood();
+
+    // 4. Cria o objeto do relatório com Data, Hora e Total
+    const novoRegistroRefeicao = {
+        data: hoje,
+        hora: hora,
+        total: listaFoodAtual.length
+    };
+
+    // 5. Adiciona ao seu array global de relatórios (garanta que essa variável exista no topo do app.js)
+    if (typeof relatorioRefeicoes === 'undefined') {
+        window.relatorioRefeicoes = []; 
+    }
+    
+    // Evita duplicar vários relatórios idênticos no mesmo minuto se clicarem várias vezes
+    const jaExiste = relatorioRefeicoes.find(r => r.data === hoje && r.hora === hora);
+    if (!jaExiste) {
+        relatorioRefeicoes.push(novoRegistroRefeicao);
+        
+        // Salva localmente no localStorage do relatório também, se desejar
+        localStorage.setItem("relatorioRefeicoes", JSON.stringify(relatorioRefeicoes));
+    }
+
+    // =====================================================================
+    // ATENÇÃO: Modifique o corpo do seu 'salvarTudo()' para incluir o 'relatorioRefeicoes'
+    // =====================================================================
+    salvarTudo(); 
+}
 // ===========================
 // INICIAR
 // ===========================

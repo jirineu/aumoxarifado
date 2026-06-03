@@ -63,9 +63,7 @@
         <!-- ABA PONTO -->
         <!-- ========================= -->
 
-        <section id="aba-ponto" class="aba">
-
-            <!-- CADASTRO -->
+ <section id="aba-ponto" class="aba">
 
             <div class="card">
 
@@ -77,16 +75,39 @@
                 <label>Função</label>
                 <input type="text" id="funcaoFuncionario">
 
-                <label>Horário de Trabalho</label>
-                <input type="text" id="horarioFuncionario" placeholder="08:00 às 17:00">
+                <div style="display: flex; gap: 10px;">
+                    <div style="flex: 1;">
+                        <label>Horário Entrada</label>
+                        <input type="number" id="entradaFuncionario" min="0" max="23" placeholder="Ex: 8">
+                    </div>
+                    <div style="flex: 1;">
+                        <label>Horário Saída</label>
+                        <input type="number" id="saidaFuncionario" min="0" max="23" placeholder="Ex: 17">
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 10px;">
+                    <div style="flex: 1;">
+                        <label>Alojamento</label>
+                        <select id="alojamentoFuncionario">
+                            <option value="Não">Não</option>
+                            <option value="Sim">Sim</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1;">
+                        <label>VR (Vale Refeição)</label>
+                        <select id="vrFuncionario">
+                            <option value="Não">Não</option>
+                            <option value="Sim">Sim</option>
+                        </select>
+                    </div>
+                </div>
 
                 <button onclick="salvarFuncionario()">
                     Salvar Funcionário
                 </button>
 
             </div>
-
-            <!-- FILTRO -->
 
             <div class="card">
 
@@ -99,8 +120,6 @@
 
             </div>
 
-            <!-- FUNCIONÁRIOS -->
-
             <div class="card">
 
                 <h2>Funcionários</h2>
@@ -109,32 +128,39 @@
 
             </div>
 
-            <!-- HISTÓRICO -->
+            <div class="card">
 
-          <div class="card">
+                <div class="topo-historico" style="display: flex; justify-content: space-between; align-items: center;">
 
-    <div class="topo-historico">
+                    <div>
+                        <h2>Histórico de Pontos</h2>
+                        <p id="dataAtual">Mostrando tudo</p>
+                    </div>
 
-        <div>
+                    <div style="display: flex; gap: 5px;">
+                        <button 
+                            class="btn-filtro" 
+                            onclick="atualizarDadosDaPlanilha()" 
+                            style="margin: 0; padding: 10px; width: auto;"
+                            title="Sincronizar com a planilha"
+                        >
+                            🔄
+                        </button>
 
-            <h2>Histórico de Pontos</h2>
+                        <button
+                            class="btn-filtro"
+                            onclick="abrirFiltroPonto()"
+                            style="margin: 0; padding: 10px; width: auto;"
+                        >
+                            🔍
+                        </button>
+                    </div>
 
-            <p id="dataAtual"></p>
+                </div>
 
-        </div>
+                <div id="historicoPontos"></div>
 
-        <button
-            class="btn-filtro"
-            onclick="abrirFiltroPonto()"
-        >
-            🔍
-        </button>
-
-    </div>
-
-    <div id="historicoPontos"></div>
-
-</div>
+            </div>
 
         </section>
 
@@ -153,26 +179,46 @@
             </div>
 
         </section>
+   <section id="aba-food" class="aba secao-aba secao-aba-food" style="display: none;">
+
+    <div class="food-header">
+        <h2>Lista Food (Sem VR)</h2>
+        <button class="btn-gerar-food" onclick="gerarListaFood()">🔄 Gerar Lista</button>
+    </div>
+
+    <div id="conteudoListaFood">
+        <p class="food-vazio">Clique em "Gerar Lista" para carregar os dados de hoje.</p>
+    </div>
+
+    <div id="resultadoSomaFood" class="resultado-soma-food" style="display: none;">
+        Total de Refeições: <span id="totalRefeicoes">0</span>
+    </div>
+
+</section>
 
     </main>
 
     <!-- MENU INFERIOR -->
 
-    <nav class="menu">
+   <nav class="menu">
 
-        <button onclick="abrirAba('estoque')">
-            Estoque
-        </button>
+    <button onclick="abrirAba('estoque')">
+        Estoque
+    </button>
 
-        <button onclick="abrirAba('ponto')">
-            Ponto
-        </button>
+    <button onclick="abrirAba('ponto')">
+        Ponto
+    </button>
 
-        <button onclick="abrirAba('armarios')">
-            Armários
-        </button>
+    <button onclick="abrirAba('armarios')">
+        Armários
+    </button>
 
-    </nav>
+    <button onclick="abrirAba('food')">
+        🍔 Food
+    </button>
+
+</nav>
 
 </div>
 

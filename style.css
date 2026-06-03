@@ -174,3 +174,141 @@ button{
     }
 
 }
+
+/* Cor padrão para quem não iniciou o dia */
+.funcionario.vermelho {
+    border-left: 8px solid #ff4d4d;
+    background-color: #ffe6e6;
+}
+
+/* Cor de início do dia (até 3h) e durante o almoço */
+.funcionario.verde {
+    border-left: 8px solid #2ecc71;
+    background-color: #e8f8f0;
+}
+
+/* Cor após 3h da entrada e no retorno do almoço */
+.funcionario.laranja {
+    border-left: 8px solid #e67e22;
+    background-color: #fdf2e9;
+}
+
+/* Cor após finalizar o expediente */
+.funcionario.azul {
+    border-left: 8px solid #3498db;
+    background-color: #ebf5fb;
+}
+
+/* ==========================================================================
+   ABA FOOD (ALIMENTAÇÃO)
+   ========================================================================== */
+
+/* Container principal da seção */
+.secao-aba-food {
+    padding: 15px;
+    font-family: Arial, sans-serif;
+}
+
+/* Cabeçalho da aba (Título e Botão Gerar) */
+.food-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 10px;
+}
+
+.food-header h2 {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 1.4rem;
+}
+
+.btn-gerar-food {
+    background-color: #2ecc71;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-gerar-food:hover {
+    background-color: #27ae60;
+}
+
+/* Container da lista de funcionários */
+#conteudoListaFood {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+/* Card de cada funcionário na lista */
+.food-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background-color: #ffffff;
+    border-left: 5px solid #3498db;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+}
+
+.food-info strong {
+    display: block;
+    color: #2c3e50;
+    font-size: 1rem;
+}
+
+.food-info span {
+    color: #7f8c8d;
+    font-size: 0.85rem;
+}
+
+/* Botão de Excluir individual */
+.btn-excluir-food {
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.2s;
+}
+
+.btn-excluir-food:hover {
+    background-color: #c0392b;
+}
+
+/* Texto informativo de lista vazia */
+.food-vazio {
+    text-align: center;
+    color: #7f8c8d;
+    font-style: italic;
+    padding: 20px 0;
+}
+
+/* Card de resultado da soma total no rodapé */
+.resultado-soma-food {
+    padding: 15px;
+    background-color: #34495e;
+    color: white;
+    border-radius: 6px;
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+}
+
+.resultado-soma-food span {
+    color: #2ecc71;
+    font-size: 1.3rem;
+    margin-left: 5px;
+}
