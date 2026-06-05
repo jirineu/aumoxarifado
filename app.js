@@ -1,49 +1,68 @@
-// ===========================
-// STORAGE
-// ===========================
-
-let historico =
-JSON.parse(localStorage.getItem("historico")) || [];
-
-let funcionarios =
-JSON.parse(localStorage.getItem("funcionarios")) || [];
-
-let pontos =
-JSON.parse(localStorage.getItem("pontos")) || [];
-
-let armarios =
-JSON.parse(localStorage.getItem("armarios")) || [];
-
-let idFuncionarioEditando = null; // Guarda o ID se for edição, ou null se for cadastro novo
-
-// ===========================
-// CRIAR ARMÁRIOS
-// ===========================
-
-if(armarios.length === 0){
-
-    for(let i = 1; i <= 60; i++){
-
-        armarios.push({
-            numero:i,
-            funcionario:null
-        });
-
-    }
-
-    salvarTudo();
-
-}
-
-// ===========================
-// SALVAR
-// ===========================
-
-
-
-
+// ==========================================
+// 1. CONFIGURAÇÕES E VARIÁVEIS GLOBAIS
+// ==========================================
+const urlWebApp = "https://script.google.com/macros/s/AKfycbw36Zv_IdusCQWqMsqswymxSNQ5NjDULUQ_KebVRonzRTPR7Z6rDTtXqwfRodRc6guMPg/exec";
+let timeoutLogin = null;
 let timeoutSalvar = null;
 
+// ==========================================
+// 2. STORAGE / BANCO DE DADOS LOCAL
+// ==========================================
+let historico = JSON.parse(localStorage.getItem("historico")) || [];
+let funcionarios = JSON.parse(localStorage.getItem("funcionarios")) || [];
+let pontos = JSON.parse(localStorage.getItem("pontos")) || [];
+let armarios = JSON.parse(localStorage.getItem("armarios")) || [];
+let relatorioRefeicoes = JSON.parse(localStorage.getItem("relatorioRefeicoes")) || [];
+
+let idFuncionarioEditando = null; // Guarda o ID se for edição, ou null se for cadastro novo
+document.addEventListener("DOMContentLoaded", () => {
+    const logado = localStorage.getItem("loginFeito");
+    
+    if (logado === "true") {
+        console.log("Sessão encontrada! Pulando tela de login...");
+        
+        // 1. Esconde a tela de login
+        const abaLogin = document.getElementById("aba-login");
+        if (abaLogin) {
+            abaLogin.classList.remove("ativa");
+            abaLogin.style.display = "none";
+        }
+
+        // 2. Mostra a tela de estoque
+        const abaEstoque = document.getElementById("aba-estoque");
+        if (abaEstoque) {
+            abaEstoque.classList.add("ativa");
+            abaEstoque.style.display = "block";
+        }
+
+        // 3. Mostra o menu de navegação inferior
+        const menu = document.querySelector(".menu");
+        if (menu) {
+            menu.style.display = "flex";
+        }
+
+        // Carrega dados iniciais da planilha se a função existir
+        if (typeof atualizarDadosDaPlanilha === "function") {
+            atualizarDadosDaPlanilha();
+        }
+    }
+});
+// ==========================================
+// 3. CRIAR ARMÁRIOS (INICIALIZAÇÃO)
+// ==========================================
+if (armarios.length === 0) {
+    for (let i = 1; i <= 60; i++) {
+        armarios.push({
+            numero: i,
+            funcionario: null
+        });
+    }
+    salvarTudo();
+}
+
+// ==========================================
+// SEU CÓDIGO CONTINUA ABAIXO (função salvarTudo, executarLogin, etc...)
+// ==========================================
 async function salvarTudo(){
 
     // =================================
@@ -539,6 +558,29 @@ function editarFuncionario(id){
     
     // Opcional: Rola a tela suavemente para o topo onde está o formulário
     window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// =========================================================================
+// FUNÇÃO JAVASCRIPT: CONTA OS ITENS COM BASE NO JSON LOCAL
+// =========================================================================
+// =========================================================================
+// FUNÇÃO AJUSTADA: ATUALIZAR CONTADOR LOCAL NO HTML
+// =========================================================================
+function atualizarContadorLocal() {
+    // 1. Tenta pegar da variável global. Se não for um array ou estiver vazia, busca no LocalStorage
+    let listaParaContar = (typeof funcionarios !== 'undefined' && Array.isArray(funcionarios)) ? funcionarios : [];
+    
+    if (listaParaContar.length === 0) {
+        listaParaContar = JSON.parse(localStorage.getItem("funcionarios")) || [];
+    }
+
+    // 2. Localiza o elemento exato do HTML
+    const campoIndicador = document.getElementById("qtdAtivosPlanilha");
+    
+    if (campoIndicador) {
+        // 3. Injeta a quantidade de funcionários cadastrados na tela
+        campoIndicador.textContent = listaParaContar.length;
+    }
 }
 
 // ===========================
@@ -1147,6 +1189,75 @@ function gerarListaFood() {
     // =====================================================================
     salvarTudo(); 
 }
+// ==========================================
+// FUNÇÃO DE LOGIN DO SISTEMA
+// ==========================================
+async function executarLogin() {
+    const usuario = document.getElementById("login-usuario").value.trim();
+    const senha = document.getElementById("login-senha").value.trim();
+    const msgErro = document.getElementById("mensagem-erro");
+
+    if (!usuario || !senha) {
+        msgErro.innerText = "Por favor, preencha todos os campos.";
+        msgErro.style.display = "block";
+        return; 
+    }
+
+    msgErro.style.display = "none";
+
+    // Evita múltiplos cliques seguidos no botão
+    clearTimeout(timeoutLogin);
+
+    timeoutLogin = setTimeout(async () => {
+        try {
+            const urlComParametros = `${urlWebApp}?acao=login&usuario=${encodeURIComponent(usuario)}&senha=${encodeURIComponent(senha)}`;
+
+            const resposta = await fetch(urlComParametros);
+            const resultado = await resposta.json();
+
+            if (resultado.sucesso === true) {
+                console.log("Login autorizado com sucesso!");
+
+                // SALVA O ESTADO DO LOGIN NO LOCALSTORAGE para não pedir novamente
+                localStorage.setItem("loginFeito", "true");
+
+                // 1. Esconde a tela de login
+                const abaLogin = document.getElementById("aba-login");
+                if (abaLogin) {
+                    abaLogin.classList.remove("ativa");
+                    abaLogin.style.display = "none";
+                }
+
+                // 2. Mostra a tela de estoque
+                const abaEstoque = document.getElementById("aba-estoque");
+                if (abaEstoque) {
+                    abaEstoque.classList.add("ativa");
+                    abaEstoque.style.display = "block";
+                }
+
+                // 3. Mostra o menu de navegação inferior
+                const menu = document.querySelector(".menu");
+                if (menu) {
+                    menu.style.display = "flex";
+                }
+
+                // Tenta carregar os dados se a função existir
+                if (typeof atualizarDadosDaPlanilha === "function") {
+                    atualizarDadosDaPlanilha();
+                }
+
+            } else {
+                msgErro.innerText = "Usuário ou senha incorretos.";
+                msgErro.style.display = "block";
+            }
+
+        } catch (erro) {
+            console.log("Erro ao validar credenciais:", erro);
+            msgErro.innerText = "Falha na conexão com o servidor.";
+            msgErro.style.display = "block";
+        }
+    }, 400);
+}
 // ===========================
 // INICIAR
 // ===========================
@@ -1155,4 +1266,5 @@ renderHistorico();
 renderFuncionarios();
 renderHistoricoPontos();
 renderArmarios();
+atualizarContadorLocal()
 
