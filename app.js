@@ -1258,6 +1258,202 @@ async function executarLogin() {
         }
     }, 400);
 }
+
+// Função acionada pelo botão da Lupa para abrir a tela e limpar buscas passadas
+function abrirNovaAbaIndicadores() {
+  if (typeof abrirAba === "function") abrirAba('indicadores');
+  
+  document.getElementById("inputBuscaFuncionario").value = "";
+  document.getElementById("mensagemFeedback").innerText = "";
+  document.getElementById("cardResultadoFuncionario").style.display = "none";
+  
+  // Nova Linha: Garante que a lista comece escondida e vazia
+  const lista = document.getElementById("listaSugestoes");
+  if (lista) {
+    lista.style.display = "none";
+    lista.innerHTML = "";
+  }
+}
+
+// Mecanismo que faz o cruzamento dos dados locais (Cadastro) + dados remotos (Backup)
+function buscarFuncionarioIndividual() {
+  const termoBusca = document.getElementById("inputBuscaFuncionario").value.trim().toLowerCase();
+  const feedback = document.getElementById("mensagemFeedback");
+  const cardResultado = document.getElementById("cardResultadoFuncionario");
+  const btn = document.getElementById("btnBuscarIndicadores");
+
+  if (!termoBusca) {
+    feedback.style.color = "#e74c3c";
+    feedback.innerText = "Por favor, digite um Nome ou ID para pesquisar.";
+    cardResultado.style.display = "none";
+    return;
+  }
+
+  feedback.style.color = "#f39c12";
+  feedback.innerText = "Localizando dados cadastrais...";
+
+  // Seu sistema armazena a lista de funcionários na memória. Vamos buscar nela:
+  let listaCadastrada = [];
+  if (typeof funcionarios !== "undefined") {
+    listaCadastrada = funcionarios;
+  } else if (typeof listaFuncionariosMemoria !== "undefined") {
+    listaCadastrada = listaFuncionariosMemoria;
+  }
+
+  // Localiza o funcionário comparando ID numérico ou trecho do nome
+  const funcCadastrado = listaCadastrada.find(f => 
+    String(f.id).toLowerCase() === termoBusca || 
+    String(f.nome).toLowerCase().includes(termoBusca)
+  );
+
+  if (!funcCadastrado) {
+    feedback.style.color = "#e74c3c";
+    feedback.innerText = "Funcionário não encontrado no cadastro ativo do sistema.";
+    cardResultado.style.display = "none";
+    return;
+  }
+
+  feedback.innerText = "Buscando saldos e faltas na planilha de backup...";
+  btn.disabled = true;
+
+  // Monta o link utilizando a sua variável global 'urlWebApp' e adiciona a ação
+  const urlFinal = `${urlWebApp}?acao=consultarIndicadores`;
+
+  fetch(urlFinal)
+    .then(response => response.json())
+    .then(retorno => {
+      btn.disabled = false;
+
+      if (retorno.sucesso) {
+        // Localiza os indicadores correspondentes usando a chave primária (ID)
+        const indicadores = retorno.dados.find(i => String(i.id).trim() === String(funcCadastrado.id).trim());
+
+        // Define valores de segurança caso o funcionário ainda não tenha pontos registrados no mês
+        const saldoFinal = indicadores ? indicadores.saldoBancoHoras : "00:00";
+        const faltasFinais = indicadores ? indicadores.faltas : 0;
+
+        // Preenche o layout com o cruzamento dos dados
+        document.getElementById("viewId").innerText = funcCadastrado.id;
+        document.getElementById("viewNome").innerText = funcCadastrado.nome;
+        document.getElementById("viewFuncao").innerText = funcCadastrado.funcao || "Não cadastrada";
+        document.getElementById("viewAlojado").innerText = funcCadastrado.alojamento || funcCadastrado.alojamentoFuncionario || "Não";
+        document.getElementById("viewVR").innerText = funcCadastrado.vr || funcCadastrado.vrFuncionario || "Não";
+
+        // Regra de cor para o saldo: vermelho para devedor (-), verde para positivo ou zerado
+        const elSaldo = document.getElementById("viewSaldo");
+        elSaldo.innerText = saldoFinal;
+        elSaldo.style.color = saldoFinal.startsWith("-") ? "#e74c3c" : "#2ecc71";
+        elSaldo.style.fontWeight = "bold";
+
+        document.getElementById("viewFaltas").innerText = `${faltasFinais} falta(s) detectada(s)`;
+
+        feedback.innerText = "";
+        cardResultado.style.display = "block"; // Revela a ficha completa do funcionário
+      } else {
+        feedback.style.color = "#e74c3c";
+        feedback.innerText = "Erro ao ler a planilha de backup: " + retorno.mensagem;
+      }
+    })
+    .catch(erro => {
+      btn.disabled = false;
+      feedback.style.color = "#e74c3c";
+      feedback.innerText = "Falha de conexão com o servidor: " + erro;
+    });
+}
+
+// Função que filtra os funcionários cadastrados em tempo real enquanto digita
+function filtrarSugestoes() {
+  const input = document.getElementById("inputBuscaFuncionario");
+  const listaContainer = document.getElementById("listaSugestoes");
+  const termo = input.value.trim().toLowerCase();
+
+  // Se o campo estiver vazio, esconde a lista e encerra
+  if (!termo) {
+    listaContainer.style.display = "none";
+    listaContainer.innerHTML = "";
+    return;
+  }
+
+  // Puxa a lista de funcionários carregada na memória do seu app
+  let listaCadastrada = [];
+  if (typeof funcionarios !== "undefined") {
+    listaCadastrada = funcionarios;
+  } else if (typeof listaFuncionariosMemoria !== "undefined") {
+    listaCadastrada = listaFuncionariosMemoria;
+  }
+
+  // Filtra por trechos do Nome ou do Cargo (Função)
+  let filtrados = listaCadastrada.filter(f => 
+    String(f.nome).toLowerCase().includes(termo) || 
+    String(f.funcao || f.cargo).toLowerCase().includes(termo)
+  );
+
+  // Organiza os resultados em Ordem Alfabética (pelo Nome)
+  filtrados.sort((a, b) => String(a.nome).localeCompare(String(b.nome)));
+
+  // Se não encontrar ninguém com aquele termo
+  if (filtrados.length === 0) {
+    listaContainer.innerHTML = '<div style="padding: 10px; color: #999; font-size: 0.9rem;">Nenhum funcionário encontrado</div>';
+    listaContainer.style.display = "block";
+    return;
+  }
+
+  // Monta a lista visual de sugestões (Nome e Cargo)
+  listaContainer.innerHTML = "";
+  filtrados.forEach(f => {
+    const item = document.createElement("div");
+    const cargo = f.funcao || f.cargo || "Não Informado";
+    
+    // Estilização simples de linha
+    item.style.padding = "10px";
+    item.style.cursor = "pointer";
+    item.style.borderBottom = "1px solid #f5f5f5";
+    item.style.transition = "background 0.2s";
+    
+    // Efeito hover (mudar cor ao passar o mouse)
+    item.onmouseenter = () => item.style.backgroundColor = "#fdf6f6";
+    item.onmouseleave = () => item.style.backgroundColor = "white";
+    
+    // Conteúdo: Nome destacado em cima e cargo menor em baixo
+    item.innerHTML = `
+      <div style="font-weight: bold; color: #333;">${f.nome}</div>
+      <div style="font-size: 0.8rem; color: #777;">Cargo: ${cargo}</div>
+    `;
+    
+    // Ação ao clicar no item da lista
+    item.onclick = () => selecionarFuncionarioSugestao(f.nome);
+    
+    listaContainer.appendChild(item);
+  });
+
+  listaContainer.style.display = "block";
+}
+
+// Executado quando o usuário clica em um item da lista filtrada
+function selecionarFuncionarioSugestao(nomeSelecionado) {
+  const input = document.getElementById("inputBuscaFuncionario");
+  const listaContainer = document.getElementById("listaSugestoes");
+  
+  // Define o valor do input com o nome completo escolhido
+  input.value = nomeSelecionado;
+  
+  // Fecha a caixinha de sugestões
+  listaContainer.style.display = "none";
+  listaContainer.innerHTML = "";
+  
+  // Dispara a busca detalhada de indicadores automaticamente
+  buscarFuncionarioIndividual();
+}
+
+// Fecha a caixinha de sugestões caso o usuário clique fora do campo de busca
+document.addEventListener("click", function(evento) {
+  const containerSugestoes = document.getElementById("listaSugestoes");
+  const campoInput = document.getElementById("inputBuscaFuncionario");
+  
+  if (containerSugestoes && evento.target !== campoInput && !containerSugestoes.contains(evento.target)) {
+    containerSugestoes.style.display = "none";
+  }
+});
 // ===========================
 // INICIAR
 // ===========================
