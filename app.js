@@ -5,6 +5,8 @@ const urlWebApp = "https://script.google.com/macros/s/AKfycbw36Zv_IdusCQWqMsqswy
 let timeoutLogin = null;
 let timeoutSalvar = null;
 
+
+
 // ==========================================
 // 2. STORAGE / BANCO DE DADOS LOCAL
 // ==========================================
@@ -101,9 +103,8 @@ JSON.parse(localStorage.getItem("relatorioRefeicoes")) || [];
         try{
 
             await fetch(
-
-                "https://script.google.com/macros/s/AKfycbw36Zv_IdusCQWqMsqswymxSNQ5NjDULUQ_KebVRonzRTPR7Z6rDTtXqwfRodRc6guMPg/exec",
-
+                urlWebApp, 
+                
                 {
 
                     method:"POST",
@@ -991,7 +992,6 @@ async function atualizarDadosDaPlanilha() {
         botao.disabled = true;
 
         // URL gerada na implantação do seu Google Apps Script
-        const urlWebApp = "https://script.google.com/macros/s/AKfycbw36Zv_IdusCQWqMsqswymxSNQ5NjDULUQ_KebVRonzRTPR7Z6rDTtXqwfRodRc6guMPg/exec"; 
         
         const resposta = await fetch(urlWebApp);
         const dados = await resposta.json();
