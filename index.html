@@ -218,48 +218,84 @@
 
 </section>
 <section id="aba-indicadores" class="aba" style="display: none;">
-            <div class="card">
-                <h2>Consulta Individual de Funcionário</h2>
-                <p style="color: #666; margin-bottom: 15px; font-size: 0.9rem;">Busque os indicadores cruzados com a Planilha de Backup</p>
-                
-             <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; position: relative;">
-    <label for="inputBuscaFuncionario" style="font-weight: bold; color: #741b47;">Funcionário:</label>
-    
-    <input type="text" 
-           id="inputBuscaFuncionario" 
-           placeholder="Digite o nome ou cargo..." 
-           oninput="filtrarSugestoes()" 
-           autocomplete="off"
-           style="display: flex; padding: 10px; border-radius: 8px; border: 1px solid #ddd; width: 100%; box-sizing: border-box;">
-    
-    <div id="listaSugestoes" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-radius: 8px; max-height: 200px; overflow-y: auto; z-index: 1000; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+    <div class="card">
+        <h2>Consulta Individual de Funcionário</h2>
+        <p style="color: #666; margin-bottom: 15px; font-size: 0.9rem;">Busque os indicadores cruzados com a Planilha de Backup</p>
+        
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; position: relative;">
+            <label for="inputBuscaFuncionario" style="font-weight: bold; color: #741b47;">Funcionário:</label>
+            
+            <input type="text" 
+                   id="inputBuscaFuncionario" 
+                   placeholder="Digite o nome ou cargo..." 
+                   oninput="filtrarSugestoes()" 
+                   autocomplete="off"
+                   style="display: flex; padding: 10px; border-radius: 8px; border: 1px solid #ddd; width: 100%; box-sizing: border-box;">
+            
+            <div id="listaSugestoes" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-radius: 8px; max-height: 200px; overflow-y: auto; z-index: 1000; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            </div>
+
+            <button id="btnBuscarIndicadores" onclick="buscarFuncionarioIndividual()" style="padding: 10px 20px; background-color: #741b47; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 5px;">
+                Buscar Indicadores
+            </button>
+        </div>
+
+        <div id="mensagemFeedback" style="font-weight: bold; margin-bottom: 10px; text-align: center;"></div>
     </div>
 
-    <button id="btnBuscarIndicadores" onclick="buscarFuncionarioIndividual()" style="padding: 10px 20px; background-color: #741b47; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 5px;">
-        Buscar Indicadores
-    </button>
-</div>
-
-                <div id="mensagemFeedback" style="font-weight: bold; margin-bottom: 10px; text-align: center;"></div>
+    <div id="cardResultadoFuncionario" class="card" style="display: none;">
+        <h3 id="viewNome" style="color: #741b47; margin-top: 0; font-size: 1.5rem; border-bottom: 2px solid #e6b8af; padding-bottom: 8px;">-</h3>
+        
+        <div style="margin-top: 15px; font-size: 1rem; line-height: 1.6;">
+            <p><strong>ID do Funcionário:</strong> <span id="viewId">-</span></p>
+            <p><strong>Função Cadastrada:</strong> <span id="viewFuncao">-</span></p>
+            <p><strong>Recebe VR (Vale Refeição):</strong> <span id="viewVR" style="font-weight: bold;">-</span></p>
+            <p><strong>Instalado em Alojamento:</strong> <span id="viewAlojado" style="font-weight: bold;">-</span></p>
+            
+            <div style="margin-top: 20px; padding: 15px; background: #fdf6f6; border-radius: 8px; border-left: 5px solid #741b47;">
+                <h4 style="margin: 0 0 10px 0; color: #741b47; font-size: 1.1rem; border-bottom: 1px dashed #e6b8af; padding-bottom: 4px;">Métricas do Mês Vigente</h4>
+                <p style="margin: 6px 0;"><strong>Saldo Banco de Horas:</strong> <span id="viewSaldo" style="font-size: 1.2rem;">-</span></p>
+                <p style="margin: 6px 0;"><strong>Quantidade de Faltas:</strong> <span id="viewFaltas" style="font-size: 1.2rem; font-weight: bold; color: #c0392b;">-</span></p>
             </div>
 
-            <div id="cardResultadoFuncionario" class="card" style="display: none;">
-                <h3 id="viewNome" style="color: #741b47; margin-top: 0; font-size: 1.5rem; border-bottom: 2px solid #e6b8af; padding-bottom: 8px;">-</h3>
+            <div id="containerDinamicoServicos"></div>
+
+            <div style="margin-top: 20px; padding: 15px; background: #fffdf9; border-radius: 8px; border: 1px solid #f1c40f; border-left: 5px solid #f1c40f;">
+                <h4 style="margin: 0 0 12px 0; color: #b7950b; font-size: 1.1rem;">Lançar Novo Serviço para este Funcionário</h4>
                 
-                <div style="margin-top: 15px; font-size: 1rem; line-height: 1.6;">
-                    <p><strong>ID do Funcionário:</strong> <span id="viewId">-</span></p>
-                    <p><strong>Função Cadastrada:</strong> <span id="viewFuncao">-</span></p>
-                    <p><strong>Recebe VR (Vale Refeição):</strong> <span id="viewVR" style="font-weight: bold;">-</span></p>
-                    <p><strong>Instalado em Alojamento:</strong> <span id="viewAlojado" style="font-weight: bold;">-</span></p>
-                    
-                    <div style="margin-top: 20px; padding: 15px; background: #fdf6f6; border-radius: 8px; border-left: 5px solid #741b47;">
-                        <h4 style="margin: 0 0 10px 0; color: #741b47;">Métricas do Mês Vigente</h4>
-                        <p><strong>Saldo Banco de Horas:</strong> <span id="viewSaldo" style="font-size: 1.2rem;">-</span></p>
-                        <p><strong>Quantidade de Faltas:</strong> <span id="viewFaltas" style="font-size: 1.2rem; font-weight: bold; color: #c0392b;">-</span></p>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <div>
+                        <label for="inputDataServico" style="font-size: 0.85rem; font-weight: bold; color: #555;">Data da Realização:</label>
+                        <input type="date" 
+                               id="inputDataServico" 
+                               placeholder="Ex: 08/06/2026" 
+                               maxlength="10"
+                               oninput="aplicarMascaraData(this)"
+                               style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 0.9rem;">
                     </div>
+
+                    <div>
+                        <label for="inputTipoServico" style="font-size: 0.85rem; font-weight: bold; color: #555;">Tipo de Serviço:</label>
+                        <input type="text" id="inputTipoServico" placeholder="Ex: Instalação Elétrica QDG / Diária Extracomercial" 
+                               style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 0.9rem;">
+                    </div>
+
+                    <div>
+                        <label for="inputValorServico" style="font-size: 0.85rem; font-weight: bold; color: #555;">Valor do Serviço (R$):</label>
+                        <input type="number" id="inputValorServico" step="0.01" placeholder="Ex: 250.00" 
+                               style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 0.9rem;">
+                    </div>
+
+                    <button id="btnConfirmarServico" onclick="lancarNovoServicoDireto()" 
+                            style="background-color: #741b47; color: white; border: none; border-radius: 6px; padding: 10px; cursor: pointer; font-weight: bold; font-size: 0.95rem; margin-top: 5px; transition: background 0.2s;">
+                        Confirmar e Gravar Serviço
+                    </button>
                 </div>
             </div>
-        </section>
+
+        </div>
+    </div>
+</section>
     </main>
 
     <!-- MENU INFERIOR -->
