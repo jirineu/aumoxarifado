@@ -452,7 +452,12 @@ function salvarFuncionario(){
 function renderFuncionarios(lista = funcionarios){
 
     const div =
+
     document.getElementById("listaFuncionarios");
+if (!div) {
+        console.warn("Aviso: Elemento 'listaFuncionarios' não está visível nesta tela. Renderização ignorada.");
+        return;
+    }
 
     div.innerHTML = "";
 
@@ -1349,6 +1354,12 @@ function buscarFuncionarioIndividual() {
 
         feedback.innerText = "";
         cardResultado.style.display = "block"; // Revela a ficha completa do funcionário
+
+        // =========================================================================
+        // LOCAL CORRETO: Dispara o histórico após renderizar o card e usa o ID correto
+        // =========================================================================
+        buscarERenderizarHistoricoServicos(funcCadastrado.id);
+
       } else {
         feedback.style.color = "#e74c3c";
         feedback.innerText = "Erro ao ler a planilha de backup: " + retorno.mensagem;
@@ -1454,6 +1465,256 @@ document.addEventListener("click", function(evento) {
     containerSugestoes.style.display = "none";
   }
 });
+
+/**
+ * Busca o histórico de serviços diretamente do WebApp (Planilha) via GET,
+ * filtra pelo ID do funcionário atual e renderiza na tela.
+ * * @param {string|number} funcionarioId - ID do funcionário buscado
+ */
+function buscarERenderizarHistoricoServicos(funcionarioId) {
+  const container = document.getElementById("containerDinamicoServicos");
+  
+  // Mensagem visual menor de carregamento enquanto busca os dados na planilha
+  container.innerHTML = `
+    <div style="margin-top: 15px; text-align: center; color: #741b47; font-size: 0.85rem;">
+      <p>Carregando histórico de serviços...</p>
+    </div>`;
+
+  // Faz a requisição GET para o seu WebApp
+  fetch(urlWebApp)
+    .then(resposta => resposta.json())
+    .then(resultado => {
+      if (!resultado.sucesso) {
+        throw new Error(resultado.erro || "Falha ao obter dados do servidor.");
+      }
+
+      // Filtra os serviços da planilha que pertencem a este ID de funcionário
+      const listaServicos = resultado.servicos || [];
+      const servicosDoFuncionario = listaServicos.filter(s => 
+        String(s.funcionarioId).trim() === String(funcionarioId).trim()
+      );
+
+      // Se não houver nenhum serviço cadastrado para ele
+      if (servicosDoFuncionario.length === 0) {
+        container.innerHTML = `
+          <div style="margin-top: 15px; padding: 10px; background: #f9f9f9; border-radius: 6px; border: 1px solid #ddd; text-align: center; color: #7f8c8d; font-size: 0.85rem;">
+            <p style="margin: 0;">Nenhum serviço registrado para este funcionário até o momento.</p>
+          </div>`;
+        return;
+      }
+
+      // Calcula o valor total acumulado somando as linhas
+// Calcula o valor total acumulado somando apenas as linhas com status "Pendente"
+const valorTotalAcumulado = servicosDoFuncionario.reduce((soma, item) => {
+  if (item.status === "Pendente") {
+    return soma + (Number(item.valorServico) || 0);
+  }
+  return soma;
+}, 0);
+      // Inicia a montagem da estrutura da Tabela do Index (Visual menor e minimalista)
+      let html = `
+        <div style="margin-top: 15px; padding: 12px; background: #fff; border-radius: 6px; border: 1px solid #e6b8af;">
+          <h4 style="margin: 0 0 8px 0; color: #741b47; font-size: 0.95rem; border-bottom: 1px solid #f1daf3; padding-bottom: 3px;">
+            Serviços Prestados
+          </h4>
+          
+          <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left;">
+              <thead>
+                <tr style="background-color: #741b47; color: white;">
+                  <th style="padding: 6px 8px; border-radius: 4px 0 0 4px;">Data</th>
+                  <th style="padding: 6px 8px;">Tipo de Serviço</th>
+                  <th style="padding: 6px 8px; text-align: right;">Valor</th>
+                  <th style="padding: 6px 8px; text-align: center; border-radius: 0 4px 4px 0;">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+      `;
+
+      // Popula as linhas da tabela aplicando efeito zebra e tratando o status com botão
+      servicosDoFuncionario.forEach((servico, index) => {
+        const fundoLinha = index % 2 === 0 ? "white" : "#fbf4f7";
+        const valorFormatado = Number(servico.valorServico).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        
+        // Renderização inteligente do Status (Botão Pagar VS Tag Pago)
+        let htmlStatus = "";
+        if (servico.status === "Pago") {
+          htmlStatus = `<span style="background: #27ae60; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 0.75rem;">Pago</span>`;
+        } else {
+          htmlStatus = `
+            <button onclick="alterarStatusParaPago(${servico.numLinha}, ${servico.funcionarioId})" 
+                    style="background: #f39c12; color: white; border: none; padding: 3px 8px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.75rem; transition: 0.2s;"
+                    onmouseenter="this.style.background='#d35400'" onmouseleave="this.style.background='#f39c12'">
+              Pagar
+            </button>`;
+        }
+
+        html += `
+          <tr style="background-color: ${fundoLinha}; border-bottom: 1px solid #f1daf3;">
+            <td style="padding: 6px 8px; white-space: nowrap;">${servico.dataRealizacao || '-'}</td>
+            <td style="padding: 6px 8px;">${servico.tipoServico}</td>
+            <td style="padding: 6px 8px; text-align: right; font-weight: bold; color: #2c3e50;">${valorFormatado}</td>
+            <td style="padding: 6px 8px; text-align: center;">${htmlStatus}</td>
+          </tr>
+        `;
+      });
+
+      const totalGeralFormatado = valorTotalAcumulado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+      // Fecha a tabela e insere o painel com o Total Acumulado compactado
+      html += `
+              </tbody>
+            </table>
+          </div>
+          
+          <div style="margin-top: 8px; text-align: right; font-size: 0.85rem; color: #741b47;">
+            <strong>Total a ser Pago :</strong> 
+            <span style="font-size: 0.9rem; font-weight: bold; background: #741b47; color: white; padding: 2px 6px; border-radius: 4px; margin-left: 3px;">
+              ${totalGeralFormatado}
+            </span>
+          </div>
+        </div>
+      `;
+
+      // Atualiza o container dinâmico com o HTML gerado
+      container.innerHTML = html;
+    })
+    .catch(erro => {
+      console.error("Erro ao buscar histórico:", erro);
+      container.innerHTML = `
+        <div style="margin-top: 15px; padding: 10px; background: #fff5f5; border: 1px solid #c0392b; border-radius: 6px; color: #c0392b; text-align: center; font-size: 0.8rem;">
+          Erro ao atualizar histórico de serviços. Verifique a conexão.
+        </div>`;
+    });
+}
+
+/**
+ * Envia o comando para o Backend atualizar a linha do serviço para "Pago"
+ */
+function alterarStatusParaPago(numLinha, funcionarioId) {
+  // Alerta de confirmação removido! O clique agora é direto e imediato.
+
+  const payload = {
+    acaoStatus: "mudarParaPago",
+    numLinha: numLinha
+  };
+
+  fetch(urlWebApp, {
+    method: "POST",
+    mode: "cors",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify(payload)
+  })
+  .then(resposta => {
+    if (!resposta.ok) throw new Error("Erro na resposta da rede.");
+    return resposta.json();
+  })
+  .then(resultado => {
+    if (resultado.sucesso) {
+      // Mantém estritamente o Toast visual na tela
+      if (typeof mostrarToast === "function") {
+        mostrarToast("Serviço pago com sucesso!");
+      }
+      
+      // Recarrega o histórico na hora para mudar o botão laranja para o selo verde "Pago"
+      buscarERenderizarHistoricoServicos(funcionarioId);
+      
+    } else {
+      alert("Erro ao salvar pagamento: " + resultado.erro);
+    }
+  })
+  .catch(erro => {
+    console.error(erro);
+    alert("Falha de conexão ao registrar pagamento.");
+  });
+}
+function lancarNovoServicoDireto() {
+  const btn = document.getElementById("btnConfirmarServico");
+  const funcionarioId = document.getElementById("viewId").innerText;
+  const nomeFuncionario = document.getElementById("viewNome").innerText;
+  const funcao = document.getElementById("viewFuncao").innerText;
+  
+  let dataInput = document.getElementById("inputDataServico").value; // Formato padrão: yyyy-mm-dd
+  const tipoServico = document.getElementById("inputTipoServico").value.trim();
+  const valorServico = document.getElementById("inputValorServico").value.trim();
+
+  // 1. Validação básica de preenchimento dos campos
+  if (!dataInput || !tipoServico || !valorServico) {
+    alert("Por favor, preencha todos os campos (Data, Tipo e Valor) antes de salvar.");
+    return;
+  }
+
+  // 2. Converte a data de 'yyyy-mm-dd' para 'dd/mm/yyyy' para manter o padrão das suas tabelas
+  if (dataInput.includes("-")) {
+    const partes = dataInput.split("-");
+    dataInput = `${partes[2]}/${partes[1]}/${partes[0]}`;
+  }
+
+  // 3. Monta o objeto (payload) enviado para a função salvarServicos no backend
+  const payloadPost = {
+    servicos: [
+      {
+        funcionarioId: Number(funcionarioId),
+        nomeFuncionario: nomeFuncionario,
+        funcao: funcao,
+        dataRealizacao: dataInput,
+        tipoServico: tipoServico,
+        valorServico: Number(valorServico)
+        // O status "Pendente" é injetado automaticamente pelo backend ao salvar
+      }
+    ]
+  };
+
+  // 4. Bloqueia o botão temporariamente para evitar cliques duplos acidentais
+  btn.disabled = true;
+  btn.innerText = "Gravando na Planilha...";
+  btn.style.backgroundColor = "#95a5a6";
+
+  // 5. Envia os dados usando POST para a sua variável global 'urlWebApp'
+  fetch(urlWebApp, {
+    method: "POST",
+    mode: "cors",
+    headers: {
+      "Content-Type": "text/plain;charset=utf-8"
+    },
+    body: JSON.stringify(payloadPost)
+  })
+  .then(resposta => resposta.json())
+  .then(resultado => {
+    if (resultado.sucesso) {
+      
+      // Exibe o Toast de sucesso
+      if (typeof mostrarToast === "function") {
+        mostrarToast("Serviço lançado com sucesso!");
+      } else {
+        alert("Serviço lançado com sucesso!");
+      }
+
+      // Limpa os campos do formulário para o próximo lançamento
+      document.getElementById("inputDataServico").value = "";
+      document.getElementById("inputTipoServico").value = "";
+      document.getElementById("inputValorServico").value = "";
+
+      // Atualiza a tabela de histórico compacta imediatamente na tela (recalculando as linhas e botões de pagar)
+      if (typeof buscarERenderizarHistoricoServicos === "function") {
+        buscarERenderizarHistoricoServicos(funcionarioId);
+      }
+
+    } else {
+      alert("Erro retornado pelo servidor: " + (resultado.erro || "Falha desconhecida"));
+    }
+  })
+  .catch(erro => {
+    console.error("Erro na requisição POST:", erro);
+    alert("Falha de comunicação com o servidor ao gravar o serviço.");
+  })
+  .finally(() => {
+    // 6. Restaura as propriedades originais do botão
+    btn.disabled = false;
+    btn.innerText = "Confirmar e Gravar Serviço";
+    btn.style.backgroundColor = "#741b47";
+  });
+}
 // ===========================
 // INICIAR
 // ===========================
