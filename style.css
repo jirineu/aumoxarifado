@@ -312,3 +312,216 @@ button{
     font-size: 1.3rem;
     margin-left: 5px;
 }
+
+/* ========================================================== */
+/* ESTILO DO BOTÃO DE MAIS (+)                                */
+/* ========================================================== */
+.btn-mais {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 4px;
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.btn-mais:hover {
+  background-color: #0056b3;
+}
+
+/* ========================================================== */
+/* BOTÃO DO CARRINHO (REDONDO E TRAVADO NA TELA)              */
+/* ========================================================== */
+.btn-carrinho-flutuante {
+  position: fixed; /* Trava o botão em relação à tela */
+  bottom: 25px;    /* Distância fixa do rodapé */
+  right: 25px;     /* Distância fixa da lateral direita */
+  width: 55px;
+  height: 55px;
+  border-radius: 50%; /* Faz ficar redondo */
+  background-color: #ffc107; /* Amarelo */
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Sombra flutuante */
+  z-index: 999; /* Fica por cima da lista quando houver rolagem */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s;
+}
+
+.btn-carrinho-flutuante:hover {
+  transform: scale(1.1);
+  background-color: #e0a800;
+}
+
+/* ========================================================== */
+/* POP-UP MODAL (OCULTO POR PADRÃO)                           */
+/* ========================================================== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5); /* Fundo escuro transparente */
+  display: none; /* Controlado pelo JS */
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: #fff;
+  width: 90%;
+  max-width: 500px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  display: flex;
+  flex-direction: column;
+  max-height: 85vh;
+}
+
+.modal-header {
+  padding: 12px 15px;
+  border-bottom: 1px solid #dee2e6;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #f8f9fa;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+}
+
+.btn-fechar {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #aaa;
+}
+
+.btn-fechar:hover {
+  color: #000;
+}
+/* =========================================================================
+   CONTAINER PRINCIPAL DA LISTA (FORMAL)
+   ========================================================================= */
+#lista-materiais-container {
+    width: 90%;
+    max-width: 500px;
+    margin: 20px auto;
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* =========================================================================
+   CADA LINHA DE MATERIAL (ALINHAMENTO EM LINHA PERFEITO)
+   ========================================================================= */
+.item-material-linha {
+    display: flex;
+    justify-content: space-between; /* Afasta o texto do bloco de ações (Prioridade + Botão) */
+    align-items: center;            /* Alinha verticalmente todos no meio exato da linha */
+    padding: 12px 16px;
+    border-bottom: 1px solid #e0e0e0;
+    background-color: #ffffff;
+    gap: 12px;                      /* Espaço mínimo de segurança entre o texto e os botões */
+}
+
+.item-material-linha:last-child {
+    border-bottom: none;
+}
+
+/* Bloco do Texto (Esquerda) */
+.item-material-info {
+    flex-grow: 1;        /* Ocupa todo o espaço disponível na esquerda */
+    overflow: hidden;    /* Esconde o texto caso ele seja gigante */
+}
+
+.item-material-nome {
+    font-size: 14px;
+    font-weight: 500;
+    color: #212529;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; /* Se o texto for muito grande, coloca "..." elegantemente sem quebrar a linha */
+    display: block;
+}
+
+/* =========================================================================
+   BLOCO DE AÇÕES FIXO (Direita: Prioridade + Botão do Carrinho)
+   ========================================================================= */
+.item-material-acoes {
+    display: flex;
+    align-items: center;
+    gap: 12px;           /* Espaçamento fixo entre a prioridade e o carrinho */
+    flex-shrink: 0;      /* Crucial: Impede que este bloco seja esmagado ou movido */
+}
+
+/* Tag de Prioridade Sóbria e Totalmente Fixa */
+.tag-prioridade {
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #ffffff;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap; /* Impede que o texto da prioridade quebre em duas linhas */
+    flex-shrink: 0;      /* Garante tamanho estável */
+}
+
+/* BOTÃO APENAS COM CARRINHO */
+.btn-para-carrinho {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background-color: #f8f9fa;
+    color: #495057;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+.btn-para-carrinho:hover {
+    background-color: #e2e6ea;
+    color: #212529;
+    border-color: #adb5bd;
+}
+
+.btn-para-carrinho:disabled {
+    background-color: #e9ecef;
+    color: #adb5bd;
+    border-color: #dee2e6;
+    cursor: not-allowed;
+}
+
+/* Mensagens de estado */
+.txt-vazio, .txt-aviso {
+    text-align: center;
+    padding: 24px;
+    color: #6c757d;
+    font-size: 14px;
+}
+
+@media (max-width: 768px) {
+    #lista-materiais-container {
+        width: 80%;
+    }
+}
