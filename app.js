@@ -9,7 +9,7 @@ let timeoutSalvar = null;
 
 // ==========================================
 // 2. STORAGE / BANCO DE DADOS LOCAL
-// ==========================================
+// ==========================================https://script.google.com/macros/s/AKfycbxyGYBv-kXH3hsLJQtluGi6fbmgkpV8GYwLfSpJ-0jhbXG47BCzj8ZUZHB4jw_TH9hw/exec
 let historico = JSON.parse(localStorage.getItem("historico")) || [];
 let funcionarios = JSON.parse(localStorage.getItem("funcionarios")) || [];
 let pontos = JSON.parse(localStorage.getItem("pontos")) || [];
@@ -121,8 +121,8 @@ JSON.parse(localStorage.getItem("relatorioRefeicoes")) || [];
                         funcionarios,
                         pontos,
                         armarios,
-                        relatorioRefeicoes
-
+                        relatorioRefeicoes,
+                        listas
                     })
 
                 }
@@ -1714,6 +1714,728 @@ function lancarNovoServicoDireto() {
     btn.innerText = "Confirmar e Gravar Serviço";
     btn.style.backgroundColor = "#741b47";
   });
+}
+// Substitua pela URL oficial de publicação do seu Web App do Google Apps Script
+
+document.addEventListener("DOMContentLoaded", function () {
+    inicializarNavegacao();
+    carregarMateriaisPendentes();
+    configurarEnvioFormulario();
+});
+
+
+
+
+
+function carregarMateriaisPendentes() {
+    const container = document.getElementById("lista-materiais-container");
+    if (!container) return;
+
+    // Coloca uma mensagem de carregando enquanto busca os dados na planilha
+    container.innerHTML = '<p class="txt-aviso">Buscando materiais na planilha... ⏳</p>'; 
+
+    // Dispara um GET para a URL do seu WebApp (o seu backend vai rodar o doGet)
+    // Nota: Se o seu doGet precisar de um parâmetro específico (ex: acao=lerLista), adicione na URL: urlWebApp + "?acao=lerLista"
+    fetch(urlWebApp) 
+        .then(resposta => resposta.json())
+        .then(dadosDoSistema => {
+            container.innerHTML = ""; 
+
+            // Pega a lista que veio direto da planilha
+            // (Ajuste o nome 'listaCompras' caso no JSON do seu doGet ele venha com outro nome, ex: 'lista')
+            const listaOriginal = dadosDoSistema.listaCompras || [];
+
+            // Filtra para exibir APENAS itens com status "Pendente"
+            const itensPendentes = listaOriginal.filter(item => String(item.status).trim().toLowerCase() === "pendente");
+
+            if (itensPendentes.length === 0) {
+                container.innerHTML = '<p class="txt-vazio">Nenhum material pendente no momento! 🎉</p>';
+                // [AJUSTE FINO]: Mesmo sem pendentes na tela principal, o carrinho precisa ser chamado para carregar os seus itens internos
+                if (typeof gerarListaDentroDoCarrinho === "function") {
+                    gerarListaDentroDoCarrinho(dadosDoSistema); 
+                }
+                return;
+            }
+
+            // Desenha os itens na tela
+            itensPendentes.forEach((item) => {
+                const itemDiv = document.createElement("div");
+                itemDiv.className = "item-material-linha";
+
+                // [AJUSTE FINO DE CORES]: Proteção dupla para garantir cor viva independente da grafia da função global de cor
+                let corTag = "#e2e8f0";
+                if (typeof obterCorPrioridade === 'function') {
+                    corTag = obterCorPrioridade(item.prioridade);
+                } else if (typeof obtenerCorPrioridade === 'function') {
+                    corTag = obtenerCorPrioridade(item.prioridade);
+                }
+
+                // Nova estrutura: Texto isolado na esquerda, Prioridade + Botão colados na direita
+                itemDiv.innerHTML = `
+                    <div class="item-material-info">
+                        <span class="item-material-nome" title="${item.material}">${item.material}</span>
+                    </div>
+                    <div class="item-material-acoes">
+                        <span class="tag-prioridade" style="background-color: ${corTag};">
+                            ${item.prioridade}
+                        </span>
+                        <button type="button" class="btn-para-carrinho" title="Adicionar ao carrinho">
+                            🛒
+                        </button>
+                    </div>
+                `;
+
+                const btnParaCarrinho = itemDiv.querySelector(".btn-para-carrinho");
+
+if (btnParaCarrinho) {
+    btnParaCarrinho.addEventListener("click", function () {
+        if (typeof mudarStatusParaComprado === "function") {
+            
+            // [CORREÇÃO]: Passa "carrinho" em minúsculo para manter a consistência com o banco
+            mudarStatusParaComprado(
+                item.material,
+                itemDiv,
+                "carrinho",
+                "lista-materiais-container",
+                '<p class="txt-vazio" style="color: #718096; font-style: italic; text-align: center; padding: 30px; background: #f7fafc; border-radius: 8px; border: 1px dashed #e2e8f0; margin: 0;">Nenhum material pendente no momento! 🎉</p>'
+            );
+            
+            // [CORREÇÃO CRUCIAL]: Damos um pequeníssimo "respiro" (delay) de 50ms para a memória 
+            // processar a alteração do status do objeto antes de forçar o carrinho a se redesenhar.
+            setTimeout(() => {
+                if (typeof forcarRecarregamentoCarrinho === "function") {
+                    forcarRecarregamentoCarrinho();
+                } else if (typeof gerarListaDentroDoCarrinho === "function") {
+                    gerarListaDentroDoCarrinho();
+                }
+            }, 50);
+        }
+    });
+}
+
+                container.appendChild(itemDiv);
+            });
+
+            // [AJUSTE FINO]: Passando os dados recebidos para que o carrinho consiga ler a listaCompras sem travar
+            if (typeof gerarListaDentroDoCarrinho === "function") {
+                gerarListaDentroDoCarrinho(dadosDoSistema); 
+            }
+        })
+        .catch(erro => {
+            console.error("Erro ao carregar materiais da planilha:", erro);
+            container.innerHTML = '<p class="txt-erro">Erro ao carregar a lista de materiais. ❌</p>';
+        });
+}
+
+function inicializarNavegacao() {
+    const btnIrParaLista = document.getElementById("btn-ir-para-lista");
+    const btnFlutuanteCarrinho = document.getElementById("btn-flutuante-carrinho");
+    const btnFecharPopup = document.getElementById("btn-fechar-popup");
+    const popupCarrinho = document.getElementById("pop-up-carrinho");
+    
+    // NOVO: Captura o botão de adicionar material da nova seção
+    const btnAdicionarMaterial = document.getElementById("btn-adicionar-material");
+
+    // Ação do Botão (+) para abrir a Seção/Aba de Materiais
+    if (btnIrParaLista) {
+        btnIrParaLista.addEventListener("click", function () {
+            // Oculta a aba de estoque (padrão do seu sistema)
+            const abaEstoque = document.getElementById("aba-estoque");
+            if (abaEstoque) abaEstoque.style.display = "none";
+
+            // Exibe a aba de materiais
+            const abaMateriais = document.getElementById("aba-materiais");
+            if (abaMateriais) abaMateriais.style.display = "block";
+
+            // Dispara o preenchimento visual dos materiais pendentes
+            if (typeof carregarMateriaisPendentes === "function") {
+                carregarMateriaisPendentes();
+            }
+        });
+    }
+
+    // =========================================================================
+    // ADICIONADO: EVENTO DO BOTÃO "ADICIONAR À LISTA"
+    // =========================================================================
+    if (btnAdicionarMaterial) {
+        btnAdicionarMaterial.addEventListener("click", function () {
+            const inputMaterial = document.getElementById("input-material");
+            const inputPrioridade = document.getElementById("input-prioridade");
+
+            if (!inputMaterial || !inputPrioridade) return;
+
+            const nomeMaterial = inputMaterial.value.trim();
+            const prioridadeSelecionada = inputPrioridade.value;
+
+            // Validação simples para não enviar campos vazios
+            if (!nomeMaterial) {
+                alert("Por favor, digite o nome do material.");
+                return;
+            }
+            if (!prioridadeSelecionada) {
+                alert("Por favor, selecione uma prioridade.");
+                return;
+            }
+
+            // Cria o objeto exatamente no padrão que o seu salvarLista(dados.itens || []) espera no doPost
+            const novoItem = {
+                material: nomeMaterial,
+                prioridade: prioridadeSelecionada,
+                status: "Pendente"
+            };
+
+            // Desativa o botão temporariamente para evitar duplo clique
+            btnAdicionarMaterial.disabled = true;
+            btnAdicionarMaterial.innerText = "Adicionando...";
+
+            // Faz o POST para o seu Web App
+            fetch(urlWebApp, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ itens: [novoItem] })
+            })
+            .then(response => {
+                // Proteção caso use redirecionamento ou opte por no-cors interno
+                return response.headers.get("content-type")?.includes("application/json") ? response.json() : { sucesso: true };
+            })
+            .then(resposta => {
+                if (resposta.status === "sucesso" || resposta.sucesso) {
+                    alert("Material adicionado com sucesso! 🎉");
+
+                    // 1. Atualiza a nossa variável local/global para o app não precisar recarregar do zero
+                    if (typeof dadosGlobaisDoSistema !== "undefined") {
+                        if (!dadosGlobaisDoSistema.listaCompras) {
+                            dadosGlobaisDoSistema.listaCompras = [];
+                        }
+                        dadosGlobaisDoSistema.listaCompras.push(novoItem);
+                    }
+
+                    // 2. RE-RENDERIZA os itens pendentes na tela imediatamente atualizados do servidor
+                    if (typeof carregarMateriaisPendentes === "function") {
+                        carregarMateriaisPendentes();
+                    }
+
+                    // Limpa os campos do formulário para o próximo cadastro
+                    inputMaterial.value = "";
+                    inputPrioridade.value = "";
+                } else {
+                    alert("Erro ao salvar: " + (resposta.mensagem || "Erro desconhecido"));
+                }
+            })
+            .catch(erro => {
+                console.error("Erro ao enviar material:", erro);
+                alert("Erro de conexão ao tentar salvar o material.");
+            })
+            .finally(() => {
+                // Devolve o botão ao estado normal
+                btnAdicionarMaterial.disabled = false;
+                btnAdicionarMaterial.innerText = "Adicionar à Lista";
+            });
+        });
+    }
+
+    // Abre o Pop-up do Carrinho ao clicar no botão redondo flutuante
+    if (btnFlutuanteCarrinho) {
+        btnFlutuanteCarrinho.addEventListener("click", function () {
+            if (popupCarrinho) popupCarrinho.style.display = "flex";
+            
+            // Dispara o preenchimento da lista interna do carrinho de forma segura
+            if (typeof gerarListaDentroDoCarrinho === "function") {
+                const dadosMapeados = typeof dadosGlobaisDoSistema !== "undefined" ? dadosGlobaisDoSistema : {};
+                gerarListaDentroDoCarrinho(dadosMapeados);
+            }
+        });
+    }
+
+    // Fecha o Pop-up no botão (X)
+    if (btnFecharPopup) {
+        btnFecharPopup.addEventListener("click", function () {
+            if (popupCarrinho) popupCarrinho.style.display = "none";
+        });
+    }
+
+    // Fecha o Pop-up se clicar no fundo escuro de fora
+    window.addEventListener("click", function (event) {
+        if (event.target === popupCarrinho) {
+            popupCarrinho.style.display = "none";
+        }
+    });
+}
+
+function configurarCarrinhoEHistorico() {
+    const btnFlutuanteCarrinho = document.getElementById("btn-flutuante-carrinho");
+    const btnSalvarHist = document.getElementById("btn-salvar-historico");
+    const popupCarrinho = document.getElementById("pop-up-carrinho");
+    const btnFecharPopup = document.getElementById("btn-fechar-popup");
+
+    if (btnFlutuanteCarrinho) {
+        btnFlutuanteCarrinho.addEventListener("click", function () {
+            // [AJUSTE CONFORME INDEX]: Passa a variável global explicitamente se ela existir, 
+            // senão passa undefined para a função gerenciar o fallback internamente.
+            if (typeof gerarListaDentroDoCarrinho === "function") {
+                const dadosParaEnviar = typeof dadosGlobaisDoSistema !== "undefined" ? dadosGlobaisDoSistema : undefined;
+                gerarListaDentroDoCarrinho(dadosParaEnviar); 
+            }
+            if (popupCarrinho) popupCarrinho.style.display = "flex"; 
+        });
+    }
+
+    if (btnFecharPopup) {
+        btnFecharPopup.addEventListener("click", function () {
+            if (popupCarrinho) popupCarrinho.style.display = "none";
+        });
+    }
+
+    if (btnSalvarHist) {
+        btnSalvarHist.addEventListener("click", function () {
+            const inputValor = document.getElementById("input-valor-hist");
+            const inputResponsavel = document.getElementById("input-responsavel-hist");
+
+            if (!inputValor || !inputResponsavel) return;
+
+            const valorTxt = inputValor.value.trim();
+            const responsavelTxt = inputResponsavel.value.trim();
+
+            if (!valorTxt || isNaN(parseFloat(valorTxt)) || parseFloat(valorTxt) <= 0) {
+                alert("Por favor, preencha um valor total válido antes de salvar.");
+                return;
+            }
+
+            if (!responsavelTxt) {
+                alert("Por favor, digite o nome do responsável.");
+                return;
+            }
+
+            btnSalvarHist.disabled = true;
+            btnSalvarHist.innerText = "Salvando...";
+
+            const hoje = new Date().toLocaleDateString("pt-BR");
+
+            // [COMPATIBILIDADE MÁXIMA CRUCIAL]: Usa o termo exato esperado pela rota doPost do back-end
+            const payload = {
+                historicoLista: [
+                    {
+                        data: hoje,
+                        valor: parseFloat(valorTxt),
+                        pagamento: "Registrado via App", 
+                        responsavel: responsavelTxt
+                    }
+                ]
+            };
+
+            // Envia para o back-end processar (Removido o no-cors para ler os retornos do Apps Script com sucesso)
+            fetch(urlWebApp, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(resposta => {
+                if (resposta.sucesso) {
+                    alert("Compra finalizada e histórico salvo com sucesso! 🎉");
+                    
+                    // Limpa o cache local após gravação bem sucedida na planilha
+                    localStorage.removeItem("carrinhoLocal");
+
+                    // [SINCRONIA]: Remove os itens comprados também da variável global do sistema para zerar o cache de renderização
+                    if (typeof dadosGlobaisDoSistema !== "undefined" && dadosGlobaisDoSistema.listaCompras) {
+                        dadosGlobaisDoSistema.listaCompras = dadosGlobaisDoSistema.listaCompras.filter(item => 
+                            String(item.status).trim().toLowerCase() !== "carrinho"
+                        );
+                    }
+
+                    // Reseta os campos de input do pop-up
+                    inputValor.value = "";
+                    inputResponsavel.value = "";
+
+                    // Fecha o Pop-up automaticamente
+                    if (popupCarrinho) popupCarrinho.style.display = "none";
+
+                    // [CICLO DE VIDA]: Recarrega a lista principal para remover os itens comprados da tela
+                    if (typeof carregarMateriaisPendentes === "function") {
+                        carregarMateriaisPendentes();
+                    }
+                } else {
+                    alert("Erro retornado pelo servidor: " + (resposta.erro || "Não foi possível finalizar."));
+                }
+            })
+            .catch(erro => {
+                console.error("Erro ao salvar histórico:", erro);
+                alert("Erro ao conectar com o servidor.");
+            })
+            .finally(() => {
+                btnSalvarHist.disabled = false;
+                btnSalvarHist.innerText = "Finalizar e Salvar Histórico";
+            });
+        });
+    }
+}
+
+
+function gerarListaDentroDoCarrinho(dadosDoSistema) {
+    const container = document.getElementById("lista-carrinho-container");
+    const btnSalvarHistorico = document.getElementById("btn-salvar-historico");
+    
+    if (!container) return;
+
+    if (!dadosDoSistema && typeof dadosGlobaisDoSistema !== "undefined") {
+        dadosDoSistema = dadosGlobaisDoSistema;
+    }
+
+    if (!dadosDoSistema) dadosDoSistema = {};
+    if (!dadosDoSistema.listaCompras) dadosDoSistema.listaCompras = [];
+
+    container.innerHTML = "";
+
+    let itensNoCarrinho = [];
+    const carrinhoArmazenado = localStorage.getItem("carrinhoLocal");
+
+    if (carrinhoArmazenado) {
+        try {
+            const cacheJson = JSON.parse(carrinhoArmazenado);
+            if (Array.isArray(cacheJson) && cacheJson.length > 0) {
+                itensNoCarrinho = cacheJson;
+            }
+        } catch (e) {
+            console.error("Erro ao ler cache local do carrinho, limpando...", e);
+            localStorage.removeItem("carrinhoLocal");
+        }
+    }
+
+    if (itensNoCarrinho.length === 0) {
+        itensNoCarrinho = dadosDoSistema.listaCompras.filter(item => 
+            item && item.status && String(item.status).trim() === "carrinho"
+        );
+        
+        if (itensNoCarrinho.length > 0) {
+            localStorage.setItem("carrinhoLocal", JSON.stringify(itensNoCarrinho));
+        }
+    }
+
+    if (itensNoCarrinho.length === 0) {
+        container.innerHTML = '<p class="txt-vazio" style="color: #a0aec0; text-align: center; padding: 24px; font-size: 14px; margin: 0; font-style: italic;">O carrinho está vazio.</p>';
+        if (btnSalvarHistorico) btnSalvarHistorico.disabled = true;
+        return;
+    }
+
+    if (btnSalvarHistorico) btnSalvarHistorico.disabled = false;
+
+    // 4. RENDERIZAÇÃO CORRIGIDA COM MAPEAMENTO FORÇADO
+    itensNoCarrinho.forEach((item, index) => {
+        // [RESOLUÇÃO DO BUG]: Mapeia exaustivamente todas as formas que o objeto pode ter assumido
+        let nomeDoMaterial = "Material Sem Nome";
+        
+        if (typeof item === 'string') {
+            nomeDoMaterial = item;
+        } else if (item && typeof item === 'object') {
+            nomeDoMaterial = item.material || item.Material || item.nome || item.Nome || item.item || "";
+            
+            // Se ainda assim estiver vazio, tenta pegar a primeira propriedade de texto encontrada no objeto
+            if (!nomeDoMaterial) {
+                const chaves = Object.keys(item);
+                const chaveTexto = chaves.find(k => k !== 'status' && typeof item[k] === 'string');
+                nomeDoMaterial = chaveTexto ? item[chaveTexto] : JSON.stringify(item);
+            }
+        }
+        
+        const prioridadeDoMaterial = item.prioridade || item.Prioridade || "Média";
+
+        const itemDiv = document.createElement("div");
+        
+        // Estilo do container da linha ajustado
+        itemDiv.style.display = "flex";
+        itemDiv.style.justify = "space-between";
+        itemDiv.style.alignItems = "center";
+        itemDiv.style.padding = "14px 16px";
+        itemDiv.style.borderBottom = "1px solid #edf2f7";
+        itemDiv.style.backgroundColor = index % 2 === 0 ? "#ffffff" : "#f8fafc";
+        itemDiv.style.gap = "12px";
+        itemDiv.style.boxSizing = "border-box";
+        itemDiv.style.width = "100%";
+
+        let corTag = "#cbd5e0";
+        if (typeof obterCorPrioridade === 'function') {
+            corTag = obterCorPrioridade(prioridadeDoMaterial);
+        } else if (typeof obtenerCorPrioridade === 'function') {
+            corTag = obtenerCorPrioridade(prioridadeDoMaterial);
+        }
+
+        // Layout corrigido: Força o bloco de texto a ocupar espaço físico real na tela (flex: 1)
+        itemDiv.innerHTML = `
+            <div style="display: flexblock; align-items: center; gap: 30px; flex: 1; min-width: 0;">
+                <span style="font-size: 14px; font-weight: 600; color: #2d3748; word-break: break-all; white-space: normal; display: inline-block">
+                    ${nomeDoMaterial}
+                </span>
+                <span class="tag-prioridade" style="background-color: ${corTag}; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; color: #ffffff; text-transform: uppercase; flex-shrink: 0; letter-spacing: 0.03em; display: inline-block;">
+                    ${prioridadeDoMaterial}
+                </span>
+                 <button type="button" class="btn-remover-item-carrinho" style="background: #fff5f5; border: radius 1px solid #fed7d7; color: #e53e3e; font-size: 14px; cursor: pointer; padding: 0px 0px; display: flexblock; height: 24px; width: 60px;" title="Remover item do carrinho">
+                ✕
+            </button>
+            </div>
+           
+        `;
+
+        const btnRemover = itemDiv.querySelector(".btn-remover-item-carrinho");
+        btnRemover.addEventListener("click", function () {
+            if (typeof removerItemDoCarrinhoServidor === "function") {
+                removerItemDoCarrinhoServidor(nomeDoMaterial, index, itemDiv, itensNoCarrinho, container, btnSalvarHistorico);
+            }
+        });
+
+        container.appendChild(itemDiv);
+    });
+}
+function removerItemDoCarrinhoServidor(nomeMaterial, indexNoArray, elementoHtml, arrayReferencia, containerHtml, botaoHistorico) {
+    // -------------------------------------------------------------------------
+    // 1. EXECUÇÃO IMEDIATA NO FRONT-END (Estado Puro Local)
+    // -------------------------------------------------------------------------
+    
+    // Procura a posição exata do item no array por segurança
+    const indexAtual = arrayReferencia.findIndex(item => 
+        (item.material || item.Material || "").trim().toLowerCase() === String(nomeMaterial).trim().toLowerCase()
+    );
+
+    // Remove o item da memória local do carrinho
+    if (indexAtual !== -1) {
+        arrayReferencia.splice(indexAtual, 1);
+    } else {
+        arrayReferencia.splice(indexNoArray, 1);
+    }
+    
+    // Atualiza o LocalStorage imediatamente
+    localStorage.setItem("carrinhoLocal", JSON.stringify(arrayReferencia));
+
+    // Sincroniza a lista global do sistema na RAM para o item voltar a ser pendente na tela de trás
+    if (typeof dadosGlobaisDoSistema !== "undefined" && dadosGlobaisDoSistema.listaCompras) {
+        const itemNaRAM = dadosGlobaisDoSistema.listaCompras.find(item => 
+            (item.material || item.Material || "").trim().toLowerCase() === String(nomeMaterial).trim().toLowerCase()
+        );
+        if (itemNaRAM) {
+            itemNaRAM.status = "pendente"; 
+        }
+    }
+
+    // Some com a linha do HTML do carrinho instantaneamente
+    if (elementoHtml) {
+        elementoHtml.remove(); 
+    }
+
+    // Se o carrinho esvaziou, coloca o aviso na hora
+    if (arrayReferencia.length === 0) {
+        containerHtml.innerHTML = '<p class="txt-vazio" style="color: #6c757d; text-align: center; padding: 20px; font-size: 14px;">O carrinho está vazio.</p>';
+        if (botaoHistorico) botaoHistorico.disabled = true;
+    }
+
+    if (typeof mostrarToast === "function") {
+        mostrarToast(`"${nomeMaterial}" devolvido para a lista.`, "sucesso");
+    }
+
+    // Atualiza o painel de fundo (pendentes) em tempo real
+    if (typeof carregarMateriaisPendentes === "function") {
+        carregarMateriaisPendentes();
+    }
+
+    // -------------------------------------------------------------------------
+    // 2. COMUNICAÇÃO CORRIGIDA COM O BACKEND (Segundo plano)
+    // -------------------------------------------------------------------------
+    const payload = {
+        acao: "atualizarStatusMaterial", 
+        material: String(nomeMaterial).trim(), // Remove espaços invisíveis que quebram o Procurar do Sheets
+        status: "pendente" 
+    };
+
+    console.log("[Tentando Sincronizar] Enviando payload para o Sheets:", payload);
+
+    fetch(urlWebApp, {
+        method: "POST",
+        // Usamos text/plain para evitar o bloqueio de CORS do Apps Script, mas o corpo é um JSON válido
+        headers: { "Content-Type": "text/plain;charset=utf-8" }, 
+        body: JSON.stringify(payload)
+    })
+    .then(res => {
+        if (!res.ok) throw new Error(`Erro HTTP: ${res.status}`);
+        return res.json(); // Força a leitura da resposta real do Google Apps Script
+    })
+    .then(dados => {
+        if (dados && dados.sucesso) {
+            console.log(`[Sucesso Planilha] "${nomeMaterial}" mudou para pendente no Sheets.`);
+        } else {
+            // Se o Apps Script respondeu, mas não encontrou o material na planilha
+            console.warn(`[Aviso Planilha] O servidor respondeu, mas informou erro:`, dados.mensagem || dados);
+            if (typeof mostrarToast === "function") {
+                mostrarToast("Erro ao sincronizar com a planilha.", "erro");
+            }
+        }
+    })
+    .catch(erro => {
+        console.error("[Erro Crítico Planilha] Falha na comunicação com o Apps Script:", erro);
+    });
+}
+
+function obterCorPrioridade(prioridade) {
+    const p = String(prioridade).toLowerCase().trim();
+    if (p === "urgência" || p === "urgencia") return "#7000ff"; // Roxo escuro para Urgência
+    if (p === "alta") return "#dc3545"; // Vermelho
+    if (p === "média" || p === "media") return "#ffc107"; // Amarelo
+    return "#6c757d"; // Cinza para Baixa/Outros
+}
+
+function mudarStatusParaComprado(nomeMaterial, elementoHtmlDoItem, novoStatus, idContainer, msgVazioHtml) {
+    const statusTratado = String(novoStatus).trim().toLowerCase();
+
+    // =========================================================================
+    // 1. CAPTURA DOS DADOS DIRETO DA TELA (Independente de variáveis ou Back-end)
+    // =========================================================================
+    // Captura a tag de prioridade que está dentro do próprio bloco clicado
+    const tagPrioridade = elementoHtmlDoItem.querySelector(".tag-prioridade");
+    const textoPrioridade = tagPrioridade ? tagPrioridade.innerText.trim() : "Média";
+
+    // Criamos o objeto do item exatamente com os dados que o usuário está vendo
+    const novoItemCarrinho = {
+        material: nomeMaterial,
+        prioridade: textoPrioridade,
+        status: statusTratado
+    };
+
+    // =========================================================================
+    // 2. INJEÇÃO DIRETA NO CARRINHO LOCAL (LocalStorage)
+    // =========================================================================
+    let carrinhoAtual = [];
+    const cacheExistente = localStorage.getItem("carrinhoLocal");
+    
+    if (cacheExistente) {
+        try {
+            carrinhoAtual = JSON.parse(cacheExistente);
+        } catch(e) {
+            carrinhoAtual = [];
+        }
+    }
+
+    // Remove duplicados de segurança e adiciona o novo item no topo do carrinho
+    carrinhoAtual = carrinhoAtual.filter(item => (item.material || "").trim().toLowerCase() !== nomeMaterial.trim().toLowerCase());
+    carrinhoAtual.unshift(novoItemCarrinho);
+
+    // Salva o novo estado do carrinho no navegador instantaneamente
+    localStorage.setItem("carrinhoLocal", JSON.stringify(carrinhoAtual));
+
+    // Atualiza também a variável global caso ela exista, para manter tudo em sincronia
+    if (typeof dadosGlobaisDoSistema !== "undefined" && dadosGlobaisDoSistema.listaCompras) {
+        const itemNaRAM = dadosGlobaisDoSistema.listaCompras.find(i => (i.material || "").trim().toLowerCase() === nomeMaterial.trim().toLowerCase());
+        if (itemNaRAM) itemNaRAM.status = statusTratado;
+    }
+
+    // =========================================================================
+    // 3. ATUALIZAÇÃO IMEDIATA DA INTERFACE
+    // =========================================================================
+    // Remove o item da lista de pendentes na hora
+    if (elementoHtmlDoItem) {
+        elementoHtmlDoItem.remove();
+    }
+    
+    // Verifica se a lista de pendentes esvaziou
+    const container = document.getElementById(idContainer);
+    if (container && container.children.length === 0) {
+        container.innerHTML = msgVazioHtml;
+    }
+
+    // Mostra o aviso Toast de sucesso
+    if (typeof mostrarToast === "function") {
+        mostrarToast(`Adicionado ao carrinho!`, "sucesso");
+    }
+
+    // Força o desenho do carrinho na tela usando os dados locais que acabamos de criar
+    if (typeof gerarListaDentroDoCarrinho === "function") {
+        gerarListaDentroDoCarrinho();
+    }
+
+    // =========================================================================
+    // 4. BACK-END EM SEGUNDO PLANO (Silencioso)
+    // =========================================================================
+    fetch(urlWebApp, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({
+            acao: "atualizarStatusMaterial", 
+            material: nomeMaterial,
+            status: statusTratado
+        })
+    })
+    .then(res => res.json())
+    .then(dados => console.log("[Back-end] Sincronizado em segundo plano:", dados))
+    .catch(err => console.error("[Back-end] Erro de sincronização em segundo plano:", err));
+}
+
+
+function configurarEnvioFormulario() {
+    const btnAdicionar = document.getElementById("btn-adicionar-material");
+    
+    if (btnAdicionar) {
+        btnAdicionar.addEventListener("click", function () {
+            const inputMaterial = document.getElementById("input-material");
+            const inputPrioridade = document.getElementById("input-prioridade"); // Agora captura o select
+
+            const materialValor = inputMaterial.value.trim();
+            const prioridadeValor = inputPrioridade.value; // Pega o texto da opção selecionada
+
+            // Validação 1: Nome do Material
+            if (!materialValor) {
+                mostrarToast("Por favor, digite o nome do material.", "erro");
+                return; // Trava o código aqui
+            }
+
+            // Validação 2: Seleção da Prioridade
+            if (!prioridadeValor) {
+                mostrarToast("Por favor, selecione uma prioridade na lista.", "erro");
+                return; // [CORRIGIDO] Agora também trava o código aqui se faltar a prioridade
+            }
+
+            // =========================================================================
+            // SÓ CHEGA AQUI SE NENHUM ALERTA FOR ATIVADO (TUDO PREENCHIDO WITH SUCESSO)
+            // =========================================================================
+            
+            // [MODIFICADO] Só desabilita e muda o texto após passar com sucesso pelas validações
+            btnAdicionar.disabled = true;
+            btnAdicionar.innerText = "Salvando...";
+
+            // Estrutura padrão exata que mapeia para o seu `dados.itens || []` do doPost do backend
+           const payload = {
+    listas: [ // [ALTERADO] 'itens' mudou para 'listas' para alinhar com o backend
+        {
+            material: materialValor,
+            prioridade: prioridadeValor,
+            status: "Pendente"
+        }
+    ]
+};
+
+            fetch(urlWebApp, {
+                method: "POST",
+                mode: "no-cors", // Evita erros de redirecionamento de CORS do Google
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            })
+            .then(() => {
+                mostrarToast("Material enviado com sucesso para a planilha!", "sucesso");
+                
+                // Limpa as caixas de texto após o sucesso
+                inputMaterial.value = "";
+                inputPrioridade.value = "";
+
+                // Recarrega a lista de pendentes para exibir o novo item na tela
+                carregarMateriaisPendentes();
+            })
+            .catch(erro => {
+                console.error("Erro ao salvar material:", erro);
+                alert("Erro ao conectar com o servidor.");
+            })
+            .finally(() => {
+                // Devolve o estado normal do botão após terminar o envio (com sucesso ou erro de rede)
+                btnAdicionar.disabled = false;
+                btnAdicionar.innerText = "Adicionar à Lista";
+            });
+        });
+    }
 }
 // ===========================
 // INICIAR
