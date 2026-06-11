@@ -46,34 +46,154 @@
 
         <section id="aba-estoque" class="aba" style="display: none;">
 
-            <div class="card">
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h2 style="margin: 0;">Registrar Saída</h2>
+            <button type="button" id="btn-ir-para-lista" class="btn-mais" title="Abrir Lista de Materiais">+</button>
+        </div>
 
-                <h2>Registrar Saída</h2>
+        <label>Material</label>
+        <input type="text" id="material">
 
-                <label>Material</label>
-                <input type="text" id="material">
+        <label>Quantidade</label>
+        <input type="number" id="quantidade">
 
-                <label>Quantidade</label>
-                <input type="number" id="quantidade">
+        <label>Funcionário</label>
+        <input type="text" id="funcionario">
 
-                <label>Funcionário</label>
-                <input type="text" id="funcionario">
+        <button onclick="registrarSaida()">
+            Registrar
+        </button>
+    </div>
 
-                <button onclick="registrarSaida()">
-                    Registrar
+    <div class="card">
+        <h2>Histórico</h2>
+        <div id="historico"></div>
+    </div>
+
+</section>
+
+
+<section id="aba-materiais" class="aba" style="display: none; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #333; max-width: 800px; margin: 0 auto; padding: 20px; box-sizing: border-box;">
+  
+    <div class="card" style="background: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1); padding: 24px; margin-bottom: 25px; border: 1px solid #eef2f5;">
+        <h2 style="margin-top: 0; margin-bottom: 20px; font-size: 20px; color: #1a202c; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+            <span>📦</span> Adicionar Novo Material
+        </h2>
+        
+        <div style="margin-bottom: 16px;">
+            <label for="input-material" style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px; color: #4a5568;">Nome do Material</label>
+            <input type="text" id="input-material" placeholder="Ex: Cabo de Rede Cat6 Furukawa" style="width: 100%; padding: 12px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px; box-sizing: border-box; transition: border-color 0.2s; background-color: #f7fafc;">
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label for="input-prioridade" style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px; color: #4a5568;">Prioridade</label>
+            <select id="input-prioridade" style="width: 100%; padding: 12px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px; box-sizing: border-box; background-color: #f7fafc; cursor: pointer;">
+                <option value="" disabled selected>Selecione a prioridade...</option>
+                <option value="Alta">Alta</option>
+                <option value="Média">Média</option>
+                <option value="Baixa">Baixa</option>
+                <option value="Urgência">Urgência</option>
+            </select>
+        </div>
+        
+        <button type="button" id="btn-adicionar-material" style="width: 100%; background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); color: white; border: none; padding: 14px; font-size: 15px; font-weight: bold; border-radius: 6px; cursor: pointer; box-shadow: 0 2px 4px rgba(0, 123, 255, 0.2); transition: all 0.2s;">
+            Adicionar à Lista
+        </button>
+    </div>
+
+    <div class="card" style="background: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1); padding: 24px; border: 1px solid #eef2f5;">
+        <h2 style="margin-top: 0; margin-bottom: 20px; font-size: 20px; color: #1a202c; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+            <span>📋</span> Lista Atual de Materiais
+        </h2>
+        
+        <div id="lista-materiais-container" style="display: flex; flex-direction: column; gap: 12px;">
+            <p class="txt-vazio" style="color: #718096; font-style: italic; text-align: center; padding: 30px; background: #f7fafc; border-radius: 8px; border: 1px dashed #e2e8f0; margin: 0;">
+                Nenhum material carregado...
+            </p>
+        </div>
+    </div>
+
+    <button type="button" id="btn-flutuante-carrinho" class="btn-carrinho-flutuante" title="Abrir Carrinho" style="position: fixed; bottom: 25px; right: 25px; width: 60px; height: 60px; background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%); color: white; border: none; border-radius: 50%; font-size: 24px; cursor: pointer; box-shadow: 0 4px 10px rgba(40, 167, 69, 0.4); display: flex; align-items: center; justify-content: center; transition: transform 0.2s; z-index: 999;">
+        🛒
+    </button>
+
+    <div id="pop-up-carrinho" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(26, 32, 44, 0.6); backdrop-filter: blur(4px); z-index: 1000; justify-content: center; align-items: center; padding: 15px; box-sizing: border-box;">
+        
+        <div style="background-color: #ffffff; width: 100%; max-width: 480px; border-radius: 14px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); display: flex; flex-direction: column; max-height: 85vh; border: 1px solid #e2e8f0;">
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 18px 24px; border-bottom: 1px solid #edf2f7; background-color: #f7fafc; border-top-left-radius: 14px; border-top-right-radius: 14px;">
+                <h3 style="margin: 0; font-size: 18px; color: #2d3748; font-weight: 600; display: flex; align-items: center; gap: 8px;">🛒 Meu Carrinho de Compras</h3>
+                <button type="button" id="btn-fechar-popup" style="background: none; border: none; font-size: 24px; font-weight: bold; color: #a0aec0; cursor: pointer; padding: 0; line-height: 1; transition: color 0.2s;">&times;</button>
+            </div>
+
+            <div style="padding: 24px; overflow-y: auto; flex-grow: 1;">
+                
+                <div style="display: flex; gap: 16px; margin-bottom: 20px;">
+                    <div style="flex: 1;">
+                        <label for="input-valor-hist" style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #4a5568;">Valor Total (R$)</label>
+                        <input type="number" id="input-valor-hist" step="0.01" placeholder="0,00" style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; box-sizing: border-box; font-size: 14px; background: #fdfdfd;">
+                    </div>
+                    <div style="flex: 1;">
+                        <label for="input-responsavel-hist" style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #4a5568;">Responsável</label>
+                        <input type="text" id="input-responsavel-hist" placeholder="Quem comprou?" style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; box-sizing: border-box; font-size: 14px; background: #fdfdfd;">
+                    </div>
+                </div>
+
+                <h4 style="margin: 0 0 12px 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: #718096; border-bottom: 1px solid #edf2f7; padding-bottom: 6px; font-weight: 700;">Itens no Carrinho</h4>
+                
+                <div id="lista-carrinho-container" style="border: 1px solid #e2e8f0; border-radius: 8px; max-height: 220px; overflow-y: auto; background-color: #f7fafc; display: flex; flex-direction: column;">
+                    <p class="txt-vazio" style="color: #a0aec0; text-align: center; padding: 24px; font-size: 14px; margin: 0; font-style: italic;">O carrinho está vazio.</p>
+                </div>
+
+            </div>
+
+            <div style="padding: 18px 24px; border-top: 1px solid #edf2f7; background-color: #f7fafc; border-bottom-left-radius: 14px; border-bottom-right-radius: 14px;">
+                <button type="button" id="btn-salvar-historico" style="width: 100%; background: linear-gradient(135deg, #28a745 0%, #218838 100%); color: white; border: none; padding: 14px; font-size: 15px; font-weight: bold; border-radius: 6px; cursor: pointer; box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2); transition: all 0.2s;" disabled>
+                    Finalizar e Salvar Histórico
                 </button>
-
             </div>
 
-            <div class="card">
+        </div>
+    </div>
 
-                <h2>Histórico</h2>
+</section>
 
-                <div id="historico"></div>
 
+<div id="pop-up-carrinho" class="modal-overlay">
+    <div class="modal-content">
+        
+        <div class="modal-header">
+            <h2 style="margin: 0; font-size: 18px;">Carrinho / Histórico de Lista</h2>
+            <button type="button" id="btn-fechar-popup" class="btn-fechar">&times;</button>
+        </div>
+
+        <div class="modal-body" style="padding: 15px; overflow-y: auto;">
+            
+            <div class="formulario-carrinho-topo" style="background-color: #f8f9fa; padding: 12px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #ddd;">
+                <label for="input-valor-hist" style="display: block; font-weight: 500; margin-bottom: 4px; font-size: 13px; color: #495057;">Valor (R$)</label>
+                <input type="number" id="input-valor-hist" step="0.01" min="0" placeholder="0.00" style="width: 100%; margin-bottom: 10px; padding: 6px; border: 1px solid #ced4da; border-radius: 4px; box-sizing: border-box;">
+                
+                <label for="input-responsavel-hist" style="display: block; font-weight: 500; margin-bottom: 4px; font-size: 13px; color: #495057;">Responsável</label>
+                <input type="text" id="input-responsavel-hist" placeholder="Nome do responsável" style="width: 100%; padding: 6px; border: 1px solid #ced4da; border-radius: 4px; box-sizing: border-box;">
             </div>
 
-        </section>
+            <div class="carrinho-lista-secao">
+                <h4 style="margin-top: 0; margin-bottom: 10px; border-bottom: 1px dashed #ccc; padding-bottom: 5px; font-size: 14px; color: #495057;">Itens no Carrinho</h4>
+                <div id="lista-carrinho-container" style="min-height: 50px;">
+                    <p class="txt-vazio" style="color: #6c757d; text-align: center; padding: 20px; font-size: 14px;">O carrinho está vazio.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-footer" style="padding: 12px 15px; border-top: 1px solid #dee2e6; text-align: right;">
+            <button type="button" id="btn-salvar-historico" disabled style="width: 100%; padding: 10px; font-weight: bold; cursor: pointer; border-radius: 4px;">
+                Finalizar e Salvar Histórico
+            </button>
+        </div>
+
+    </div>
+</div>
 
         <!-- ========================= -->
         <!-- ABA PONTO -->
