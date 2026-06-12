@@ -1825,30 +1825,24 @@ function inicializarNavegacao() {
     const btnFecharPopup = document.getElementById("btn-fechar-popup");
     const popupCarrinho = document.getElementById("pop-up-carrinho");
     
-    // NOVO: Captura o botão de adicionar material da nova seção
     const btnAdicionarMaterial = document.getElementById("btn-adicionar-material");
 
     // Ação do Botão (+) para abrir a Seção/Aba de Materiais
     if (btnIrParaLista) {
         btnIrParaLista.addEventListener("click", function () {
-            // Oculta a aba de estoque (padrão do seu sistema)
             const abaEstoque = document.getElementById("aba-estoque");
             if (abaEstoque) abaEstoque.style.display = "none";
 
-            // Exibe a aba de materiais
             const abaMateriais = document.getElementById("aba-materiais");
             if (abaMateriais) abaMateriais.style.display = "block";
 
-            // Dispara o preenchimento visual dos materiais pendentes
             if (typeof carregarMateriaisPendentes === "function") {
                 carregarMateriaisPendentes();
             }
         });
     }
 
-    // =========================================================================
-    // ADICIONADO: EVENTO DO BOTÃO "ADICIONAR À LISTA"
-    // =========================================================================
+    // Evento do botão modificado para ser 100% compatível com a rede e com o backend
     if (btnAdicionarMaterial) {
         btnAdicionarMaterial.addEventListener("click", function () {
             const inputMaterial = document.getElementById("input-material");
@@ -1859,7 +1853,6 @@ function inicializarNavegacao() {
             const nomeMaterial = inputMaterial.value.trim();
             const prioridadeSelecionada = inputPrioridade.value;
 
-            // Validação simples para não enviar campos vazios
             if (!nomeMaterial) {
                 alert("Por favor, digite o nome do material.");
                 return;
@@ -1869,69 +1862,67 @@ function inicializarNavegacao() {
                 return;
             }
 
-            // Cria o objeto exatamente no padrão que o seu salvarLista(dados.itens || []) espera no doPost
+            // Alinhado para usar 'listas' exatamente como na outra função e no backend
             const novoItem = {
-                material: nomeMaterial,
-                prioridade: prioridadeSelecionada,
-                status: "Pendente"
+                listas: [
+                    {
+                        material: nomeMaterial,
+                        prioridade: prioridadeSelecionada,
+                        status: "Pendente"
+                    }
+                ]
             };
 
-            // Desativa o botão temporariamente para evitar duplo clique
             btnAdicionarMaterial.disabled = true;
             btnAdicionarMaterial.innerText = "Adicionando...";
 
-            // Faz o POST para o seu Web App
+            const formBody = new URLSearchParams();
+            formBody.append("payload", JSON.stringify(novoItem));
+
             fetch(urlWebApp, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ itens: [novoItem] })
+                mode: "no-cors",
+                headers: { 
+                    "Content-Type": "application/x-www-form-urlencoded" 
+                },
+                body: formBody
             })
-            .then(response => {
-                // Proteção caso use redirecionamento ou opte por no-cors interno
-                return response.headers.get("content-type")?.includes("application/json") ? response.json() : { sucesso: true };
-            })
-            .then(resposta => {
-                if (resposta.status === "sucesso" || resposta.sucesso) {
-                    alert("Material adicionado com sucesso! 🎉");
+            .then(() => {
+                mostrarToast("Material adicionado com sucesso! 🎉");
 
-                    // 1. Atualiza a nossa variável local/global para o app não precisar recarregar do zero
-                    if (typeof dadosGlobaisDoSistema !== "undefined") {
-                        if (!dadosGlobaisDoSistema.listaCompras) {
-                            dadosGlobaisDoSistema.listaCompras = [];
-                        }
-                        dadosGlobaisDoSistema.listaCompras.push(novoItem);
+                if (typeof dadosGlobaisDoSistema !== "undefined") {
+                    if (!dadosGlobaisDoSistema.listaCompras) {
+                        dadosGlobaisDoSistema.listaCompras = [];
                     }
-
-                    // 2. RE-RENDERIZA os itens pendentes na tela imediatamente atualizados do servidor
-                    if (typeof carregarMateriaisPendentes === "function") {
-                        carregarMateriaisPendentes();
-                    }
-
-                    // Limpa os campos do formulário para o próximo cadastro
-                    inputMaterial.value = "";
-                    inputPrioridade.value = "";
-                } else {
-                    alert("Erro ao salvar: " + (resposta.mensagem || "Erro desconhecido"));
+                    dadosGlobaisDoSistema.listaCompras.push({
+                        material: nomeMaterial,
+                        prioridade: prioridadeSelecionada,
+                        status: "Pendente"
+                    });
                 }
+
+                if (typeof carregarMateriaisPendentes === "function") {
+                    carregarMateriaisPendentes();
+                }
+
+                inputMaterial.value = "";
+                inputPrioridade.value = "";
             })
             .catch(erro => {
                 console.error("Erro ao enviar material:", erro);
-                alert("Erro de conexão ao tentar salvar o material.");
+                mostrarToast("Erro de conexão ao tentar salvar o material.");
             })
             .finally(() => {
-                // Devolve o botão ao estado normal
                 btnAdicionarMaterial.disabled = false;
                 btnAdicionarMaterial.innerText = "Adicionar à Lista";
             });
         });
     }
 
-    // Abre o Pop-up do Carrinho ao clicar no botão redondo flutuante
     if (btnFlutuanteCarrinho) {
         btnFlutuanteCarrinho.addEventListener("click", function () {
             if (popupCarrinho) popupCarrinho.style.display = "flex";
             
-            // Dispara o preenchimento da lista interna do carrinho de forma segura
             if (typeof gerarListaDentroDoCarrinho === "function") {
                 const dadosMapeados = typeof dadosGlobaisDoSistema !== "undefined" ? dadosGlobaisDoSistema : {};
                 gerarListaDentroDoCarrinho(dadosMapeados);
@@ -1939,14 +1930,12 @@ function inicializarNavegacao() {
         });
     }
 
-    // Fecha o Pop-up no botão (X)
     if (btnFecharPopup) {
         btnFecharPopup.addEventListener("click", function () {
             if (popupCarrinho) popupCarrinho.style.display = "none";
         });
     }
 
-    // Fecha o Pop-up se clicar no fundo escuro de fora
     window.addEventListener("click", function (event) {
         if (event.target === popupCarrinho) {
             popupCarrinho.style.display = "none";
@@ -1954,114 +1943,115 @@ function inicializarNavegacao() {
     });
 }
 
-function configurarCarrinhoEHistorico() {
-    const btnFlutuanteCarrinho = document.getElementById("btn-flutuante-carrinho");
-    const btnSalvarHist = document.getElementById("btn-salvar-historico");
-    const popupCarrinho = document.getElementById("pop-up-carrinho");
-    const btnFecharPopup = document.getElementById("btn-fechar-popup");
+// =========================================================================
+// FUNÇÃO: CONFIGURAR VALIDAÇÃO EM TEMPO REAL DO POP-UP DO CARRINHO
+// =========================================================================
+function configurarValidacaoCarrinho() {
+    const inputValor = document.getElementById("input-valor-hist");
+    const inputResponsavel = document.getElementById("input-responsavel-hist");
+    const inputEmpresa = document.getElementById("input-empresa-hist"); 
+    const btnSalvarHistorico = document.getElementById("btn-salvar-historico");
 
-    if (btnFlutuanteCarrinho) {
-        btnFlutuanteCarrinho.addEventListener("click", function () {
-            // [AJUSTE CONFORME INDEX]: Passa a variável global explicitamente se ela existir, 
-            // senão passa undefined para a função gerenciar o fallback internamente.
-            if (typeof gerarListaDentroDoCarrinho === "function") {
-                const dadosParaEnviar = typeof dadosGlobaisDoSistema !== "undefined" ? dadosGlobaisDoSistema : undefined;
-                gerarListaDentroDoCarrinho(dadosParaEnviar); 
+    if (inputValor && inputResponsavel && inputEmpresa && btnSalvarHistorico) {
+        
+        function checarCampos() {
+            const valorPreenchido = inputValor.value.trim() !== "";
+            const responsavelPreenchido = inputResponsavel.value.trim() !== "";
+            const empresaPreenchida = inputEmpresa.value.trim() !== "";
+
+            if (valorPreenchido && responsavelPreenchido && empresaPreenchida) {
+                btnSalvarHistorico.disabled = false;
+                btnSalvarHistorico.style.opacity = "1";
+                btnSalvarHistorico.style.cursor = "pointer";
+            } else {
+                btnSalvarHistorico.disabled = true;
+                btnSalvarHistorico.style.opacity = "0.6";
+                btnSalvarHistorico.style.cursor = "not-allowed";
             }
-            if (popupCarrinho) popupCarrinho.style.display = "flex"; 
-        });
-    }
+        }
 
-    if (btnFecharPopup) {
-        btnFecharPopup.addEventListener("click", function () {
-            if (popupCarrinho) popupCarrinho.style.display = "none";
-        });
+        inputValor.addEventListener("input", checarCampos);
+        inputResponsavel.addEventListener("input", checarCampos);
+        inputEmpresa.addEventListener("input", checarCampos);
     }
+}
 
-    if (btnSalvarHist) {
-        btnSalvarHist.addEventListener("click", function () {
+// =========================================================================
+// FUNÇÃO: VINCULAR GATILHO DE CLIQUE DO BOTÃO DE SALVAR HISTÓRICO
+// =========================================================================
+function inicializarSalvamentoCarrinho() {
+    const btnSalvarHistorico = document.getElementById("btn-salvar-historico");
+
+    if (btnSalvarHistorico) {
+        btnSalvarHistorico.addEventListener("click", function () {
             const inputValor = document.getElementById("input-valor-hist");
             const inputResponsavel = document.getElementById("input-responsavel-hist");
+            const inputEmpresa = document.getElementById("input-empresa-hist");
 
-            if (!inputValor || !inputResponsavel) return;
+            const valorValor = inputValor.value.trim();
+            const responsavelValor = inputResponsavel.value.trim();
+            const empresaValor = inputEmpresa.value.trim();
 
-            const valorTxt = inputValor.value.trim();
-            const responsavelTxt = inputResponsavel.value.trim();
+            if (!valorValor || !responsavelValor || !empresaValor) return;
 
-            if (!valorTxt || isNaN(parseFloat(valorTxt)) || parseFloat(valorTxt) <= 0) {
-                alert("Por favor, preencha um valor total válido antes de salvar.");
-                return;
-            }
+            btnSalvarHistorico.disabled = true;
+            btnSalvarHistorico.innerText = "Finalizando...";
 
-            if (!responsavelTxt) {
-                alert("Por favor, digite o nome do responsável.");
-                return;
-            }
-
-            btnSalvarHist.disabled = true;
-            btnSalvarHist.innerText = "Salvando...";
-
-            const hoje = new Date().toLocaleDateString("pt-BR");
-
-            // [COMPATIBILIDADE MÁXIMA CRUCIAL]: Usa o termo exato esperado pela rota doPost do back-end
+            // Monta o objeto exatamente no padrão que sua rota 'historicoLista' espera no back
             const payload = {
-                historicoLista: [
-                    {
-                        data: hoje,
-                        valor: parseFloat(valorTxt),
-                        pagamento: "Registrado via App", 
-                        responsavel: responsavelTxt
-                    }
-                ]
+                historicoLista: {
+                    valorTotal: parseFloat(valorValor),
+                    responsavel: responsavelValor,
+                    empresa: empresaValor,
+                    data: new Date().toLocaleDateString("pt-BR")
+                }
             };
 
-            // Envia para o back-end processar (Removido o no-cors para ler os retornos do Apps Script com sucesso)
-            fetch(urlWebApp, {
+            const formBody = new URLSearchParams();
+            formBody.append("payload", JSON.stringify(payload));
+
+            fetch("https://script.google.com/macros/s/AKfycbw36Zv_IdusCQWqMsqswymxSNQ5NjDULUQ_KebVRonzRTPR7Z6rDTtXqwfRodRc6guMPg/exec", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
+                mode: "no-cors",
+                headers: { 
+                    "Content-Type": "application/x-www-form-urlencoded" 
+                },
+                body: formBody
             })
-            .then(response => response.json())
-            .then(resposta => {
-                if (resposta.sucesso) {
-                    alert("Compra finalizada e histórico salvo com sucesso! 🎉");
-                    
-                    // Limpa o cache local após gravação bem sucedida na planilha
-                    localStorage.removeItem("carrinhoLocal");
+            .then(() => {
+                alert("Carrinho finalizado e histórico registrado com sucesso! 🎉");
+                
+                // Limpa os dados do modal
+                inputValor.value = "";
+                inputResponsavel.value = "";
+                inputEmpresa.value = "";
+                
+                // Fecha o popup do carrinho mudando o estilo do display para none
+                const popupCarrinho = document.getElementById("pop-up-carrinho");
+                if (popupCarrinho) popupCarrinho.style.display = "none";
 
-                    // [SINCRONIA]: Remove os itens comprados também da variável global do sistema para zerar o cache de renderização
-                    if (typeof dadosGlobaisDoSistema !== "undefined" && dadosGlobaisDoSistema.listaCompras) {
-                        dadosGlobaisDoSistema.listaCompras = dadosGlobaisDoSistema.listaCompras.filter(item => 
-                            String(item.status).trim().toLowerCase() !== "carrinho"
-                        );
-                    }
-
-                    // Reseta os campos de input do pop-up
-                    inputValor.value = "";
-                    inputResponsavel.value = "";
-
-                    // Fecha o Pop-up automaticamente
-                    if (popupCarrinho) popupCarrinho.style.display = "none";
-
-                    // [CICLO DE VIDA]: Recarrega a lista principal para remover os itens comprados da tela
-                    if (typeof carregarMateriaisPendentes === "function") {
-                        carregarMateriaisPendentes();
-                    }
-                } else {
-                    alert("Erro retornado pelo servidor: " + (resposta.erro || "Não foi possível finalizar."));
+                // Atualiza as funções locais de listagem para limpar os itens comprados da tela
+                if (typeof carregarMateriaisPendentes === "function") {
+                    carregarMateriaisPendentes();
                 }
             })
             .catch(erro => {
-                console.error("Erro ao salvar histórico:", erro);
+                console.error("Erro ao salvar histórico do carrinho:", erro);
                 alert("Erro ao conectar com o servidor.");
             })
             .finally(() => {
-                btnSalvarHist.disabled = false;
-                btnSalvarHist.innerText = "Finalizar e Salvar Histórico";
+                btnSalvarHistorico.disabled = false;
+                btnSalvarHistorico.innerText = "Finalizar e Salvar Histórico";
             });
         });
     }
 }
+
+// Chame as configurações na inicialização do DOM para deixar tudo vigiado e pronto
+document.addEventListener("DOMContentLoaded", () => {
+    configurarValidacaoCarrinho();
+    inicializarSalvamentoCarrinho();
+});
 
 
 function gerarListaDentroDoCarrinho(dadosDoSistema) {
@@ -2365,52 +2355,52 @@ function configurarEnvioFormulario() {
     if (btnAdicionar) {
         btnAdicionar.addEventListener("click", function () {
             const inputMaterial = document.getElementById("input-material");
-            const inputPrioridade = document.getElementById("input-prioridade"); // Agora captura o select
+            const inputPrioridade = document.getElementById("input-prioridade"); 
 
             const materialValor = inputMaterial.value.trim();
-            const prioridadeValor = inputPrioridade.value; // Pega o texto da opção selecionada
+            const prioridadeValor = inputPrioridade.value; 
 
             // Validação 1: Nome do Material
             if (!materialValor) {
                 mostrarToast("Por favor, digite o nome do material.", "erro");
-                return; // Trava o código aqui
+                return; 
             }
 
             // Validação 2: Seleção da Prioridade
             if (!prioridadeValor) {
                 mostrarToast("Por favor, selecione uma prioridade na lista.", "erro");
-                return; // [CORRIGIDO] Agora também trava o código aqui se faltar a prioridade
+                return; 
             }
-
-            // =========================================================================
-            // SÓ CHEGA AQUI SE NENHUM ALERTA FOR ATIVADO (TUDO PREENCHIDO WITH SUCESSO)
-            // =========================================================================
             
-            // [MODIFICADO] Só desabilita e muda o texto após passar com sucesso pelas validações
             btnAdicionar.disabled = true;
             btnAdicionar.innerText = "Salvando...";
 
-            // Estrutura padrão exata que mapeia para o seu `dados.itens || []` do doPost do backend
-           const payload = {
-    listas: [ // [ALTERADO] 'itens' mudou para 'listas' para alinhar com o backend
-        {
-            material: materialValor,
-            prioridade: prioridadeValor,
-            status: "Pendente"
-        }
-    ]
-};
+            // Mantém a estrutura 'listas' que você definiu para alinhar com o backend
+            const payload = {
+                listas: [ 
+                    {
+                        material: materialValor,
+                        prioridade: prioridadeValor,
+                        status: "Pendente"
+                    }
+                ]
+            };
+
+            // [COMPATIBILIDADE AJUSTADA]: Envelopamento seguro para no-cors não dar erro de rede
+            const formBody = new URLSearchParams();
+            formBody.append("payload", JSON.stringify(payload));
 
             fetch(urlWebApp, {
                 method: "POST",
-                mode: "no-cors", // Evita erros de redirecionamento de CORS do Google
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
+                mode: "no-cors", 
+                headers: { 
+                    "Content-Type": "application/x-www-form-urlencoded" 
+                },
+                body: formBody
             })
             .then(() => {
                 mostrarToast("Material enviado com sucesso para a planilha!", "sucesso");
                 
-                // Limpa as caixas de texto após o sucesso
                 inputMaterial.value = "";
                 inputPrioridade.value = "";
 
@@ -2419,10 +2409,9 @@ function configurarEnvioFormulario() {
             })
             .catch(erro => {
                 console.error("Erro ao salvar material:", erro);
-                alert("Erro ao conectar com o servidor.");
+                mostrarToast("Erro ao conectar com o servidor.", "erro");
             })
             .finally(() => {
-                // Devolve o estado normal do botão após terminar o envio (com sucesso ou erro de rede)
                 btnAdicionar.disabled = false;
                 btnAdicionar.innerText = "Adicionar à Lista";
             });
