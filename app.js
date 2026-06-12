@@ -5,11 +5,9 @@ const urlWebApp = "https://script.google.com/macros/s/AKfycbw36Zv_IdusCQWqMsqswy
 let timeoutLogin = null;
 let timeoutSalvar = null;
 
-
-
 // ==========================================
 // 2. STORAGE / BANCO DE DADOS LOCAL
-// ==========================================https://script.google.com/macros/s/AKfycbxyGYBv-kXH3hsLJQtluGi6fbmgkpV8GYwLfSpJ-0jhbXG47BCzj8ZUZHB4jw_TH9hw/exec
+// ==========================================
 let historico = JSON.parse(localStorage.getItem("historico")) || [];
 let funcionarios = JSON.parse(localStorage.getItem("funcionarios")) || [];
 let pontos = JSON.parse(localStorage.getItem("pontos")) || [];
@@ -29,6 +27,10 @@ document.addEventListener("DOMContentLoaded", () => {
             abaLogin.classList.remove("ativa");
             abaLogin.style.display = "none";
         }
+        // Garante que todos os botões e popups da nova aba de materiais funcionem
+    if (typeof inicializarNavegacao === "function") {
+        inicializarNavegacao();
+    }
 
         // 2. Mostra a tela de estoque
         const abaEstoque = document.getElementById("aba-estoque");
@@ -103,8 +105,9 @@ JSON.parse(localStorage.getItem("relatorioRefeicoes")) || [];
         try{
 
             await fetch(
-                urlWebApp, 
-                
+
+                "https://script.google.com/macros/s/AKfycbw36Zv_IdusCQWqMsqswymxSNQ5NjDULUQ_KebVRonzRTPR7Z6rDTtXqwfRodRc6guMPg/exec",
+
                 {
 
                     method:"POST",
@@ -121,8 +124,8 @@ JSON.parse(localStorage.getItem("relatorioRefeicoes")) || [];
                         funcionarios,
                         pontos,
                         armarios,
-                        relatorioRefeicoes,
-                        listas
+                        relatorioRefeicoes
+
                     })
 
                 }
@@ -992,6 +995,7 @@ async function atualizarDadosDaPlanilha() {
         botao.disabled = true;
 
         // URL gerada na implantação do seu Google Apps Script
+        const urlWebApp = "https://script.google.com/macros/s/AKfycbw36Zv_IdusCQWqMsqswymxSNQ5NjDULUQ_KebVRonzRTPR7Z6rDTtXqwfRodRc6guMPg/exec"; 
         
         const resposta = await fetch(urlWebApp);
         const dados = await resposta.json();
@@ -1715,18 +1719,6 @@ function lancarNovoServicoDireto() {
     btn.style.backgroundColor = "#741b47";
   });
 }
-// Substitua pela URL oficial de publicação do seu Web App do Google Apps Script
-
-document.addEventListener("DOMContentLoaded", function () {
-    inicializarNavegacao();
-    carregarMateriaisPendentes();
-    configurarEnvioFormulario();
-});
-
-
-
-
-
 function carregarMateriaisPendentes() {
     const container = document.getElementById("lista-materiais-container");
     if (!container) return;
