@@ -16,7 +16,6 @@ let relatorioRefeicoes = JSON.parse(localStorage.getItem("relatorioRefeicoes")) 
 
 let idFuncionarioEditando = null; // Guarda o ID se for edição, ou null se for cadastro novo
 
-
 document.addEventListener("DOMContentLoaded", () => {
     const logado = localStorage.getItem("loginFeito");
     
@@ -1765,21 +1764,19 @@ function carregarMateriaisPendentes() {
                 }
 
                 // Nova estrutura: Texto isolado na esquerda, Prioridade + Botão colados na direita
-               itemDiv.innerHTML = `
-    <div class="item-material-info" style="display: flex; flex-grow: 1; min-width: 0; word-break: break-word; overflow-wrap: break-word;">
-        <span class="item-material-nome" title="${item.material}" style="font-size: 14px; color: #1a202c; font-weight: 500;">
-            ${item.material}
-        </span>
-    </div>
-    <div class="item-material-acoes" style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
-        <span class="tag-prioridade" style="background-color: ${corTag}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase;">
-            ${item.prioridade}
-        </span>
-        <button type="button" class="btn-para-carrinho" title="Adicionar ao carrinho" style="background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 8px; cursor: pointer; font-size: 14px;">
-            🛒
-        </button>
-    </div>
-`;
+                itemDiv.innerHTML = `
+                    <div class="item-material-info">
+                        <span class="item-material-nome" title="${item.material}">${item.material}</span>
+                    </div>
+                    <div class="item-material-acoes">
+                        <span class="tag-prioridade" style="background-color: ${corTag};">
+                            ${item.prioridade}
+                        </span>
+                        <button type="button" class="btn-para-carrinho" title="Adicionar ao carrinho">
+                            🛒
+                        </button>
+                    </div>
+                `;
 
                 const btnParaCarrinho = itemDiv.querySelector(".btn-para-carrinho");
 
@@ -2126,19 +2123,18 @@ function gerarListaDentroDoCarrinho(dadosDoSistema) {
         
         const prioridadeDoMaterial = item.prioridade || item.Prioridade || "Média";
 
-      
+        const itemDiv = document.createElement("div");
         
-// Estilo do container da linha ajustado e corrigido
-const itemDiv = document.createElement("div");
-
-itemDiv.style.display = "flex";
-itemDiv.style.justifyContent = "space-between";
-itemDiv.style.alignItems = "center"; // Mantém os botões centralizados em relação à altura total do card
-itemDiv.style.padding = "14px 16px";
-itemDiv.style.borderBottom = "1px solid #edf2f7";
-itemDiv.style.backgroundColor = index % 2 === 0 ? "#ffffff" : "#f8fafc";
-itemDiv.style.boxSizing = "border-box";
-itemDiv.style.width = "100%";
+        // Estilo do container da linha ajustado
+        itemDiv.style.display = "flex";
+        itemDiv.style.justify = "space-between";
+        itemDiv.style.alignItems = "center";
+        itemDiv.style.padding = "14px 16px";
+        itemDiv.style.borderBottom = "1px solid #edf2f7";
+        itemDiv.style.backgroundColor = index % 2 === 0 ? "#ffffff" : "#f8fafc";
+        itemDiv.style.gap = "12px";
+        itemDiv.style.boxSizing = "border-box";
+        itemDiv.style.width = "100%";
 
         let corTag = "#cbd5e0";
         if (typeof obterCorPrioridade === 'function') {
@@ -2148,21 +2144,20 @@ itemDiv.style.width = "100%";
         }
 
         // Layout corrigido: Força o bloco de texto a ocupar espaço físico real na tela (flex: 1)
-       itemDiv.innerHTML = `
-    <div class="item-material-info" style="display: flex; width: 100%">
-        <span class="item-material-nome" title="${item.material}" style="font-size: 14px; color: #1a202c; font-weight: 500; display: block !important; white-space: normal !important; word-break: break-word !important; overflow-wrap: break-word !important; text-overflow: clip !important; overflow: visible !important;">
-            ${item.material}
-        </span>
-    </div>
-    <div class="item-material-acoes" style="display: flex !important; align-items: center !important; gap: 8px !important; flex-shrink: 0 !important;">
-        <span class="tag-prioridade" style="background-color: ${corTag}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase;">
-            ${item.prioridade}
-        </span>
-        <button type="button" class="btn-para-carrinho" title="Adicionar ao carrinho" style="background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 8px; cursor: pointer; font-size: 14px;">
-            🛒
-        </button>
-    </div>
-`;
+        itemDiv.innerHTML = `
+            <div style="display: flexblock; align-items: center; gap: 30px; flex: 1; min-width: 0;">
+                <span style="font-size: 14px; font-weight: 600; color: #2d3748; word-break: break-all; white-space: normal; display: inline-block">
+                    ${nomeDoMaterial}
+                </span>
+                <span class="tag-prioridade" style="background-color: ${corTag}; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; color: #ffffff; text-transform: uppercase; flex-shrink: 0; letter-spacing: 0.03em; display: inline-block;">
+                    ${prioridadeDoMaterial}
+                </span>
+                 <button type="button" class="btn-remover-item-carrinho" style="background: #fff5f5; border: radius 1px solid #fed7d7; color: #e53e3e; font-size: 14px; cursor: pointer; padding: 0px 0px; display: flexblock; height: 24px; width: 60px;" title="Remover item do carrinho">
+                ✕
+            </button>
+            </div>
+           
+        `;
 
         const btnRemover = itemDiv.querySelector(".btn-remover-item-carrinho");
         btnRemover.addEventListener("click", function () {
@@ -2433,4 +2428,5 @@ renderFuncionarios();
 renderHistoricoPontos();
 renderArmarios();
 atualizarContadorLocal()
+
 
