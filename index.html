@@ -122,9 +122,9 @@
         
         <div style="background-color: #ffffff; width: 100%; max-width: 480px; border-radius: 14px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); display: flex; flex-direction: column; max-height: 85vh; border: 1px solid #e2e8f0;">
             
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 18px 24px; border-bottom: 1px solid #edf2f7; background-color: #f7fafc; border-top-left-radius: 14px; border-top-right-radius: 14px;">
-                <h3 style="margin: 0; font-size: 18px; color: #2d3748; font-weight: 600; display: flex; align-items: center; gap: 8px;">🛒 Meu Carrinho de Compras</h3>
-                <button type="button" id="btn-fechar-popup" style="background: none; border: none; font-size: 24px; font-weight: bold; color: #a0aec0; cursor: pointer; padding: 0; line-height: 1; transition: color 0.2s;">&times;</button>
+            <div style="display: flex; padding: 18px 24px; border-bottom: 1px solid #edf2f7; background-color: #f7fafc; border-top-left-radius: 14px; border-top-right-radius: 14px;">
+                <h3 style="margin: 0; font-size: 18px; color: #2d3748; font-weight: 600; display: flexbox; align-items: center; gap: 8px;">🛒 Compras</h3>
+                <button type="button" id="btn-fechar-popup" style="background: none; border: none; font-size: 24px; font-weight: bold; color: #a0aec0; cursor: pointer; padding: 0; line-height: 1; transition: color 0.2s; margin-right: 2px;">&times;</button>
             </div>
 
             <div style="padding: 24px; overflow-y: auto; flex-grow: 1;">
@@ -174,13 +174,26 @@
 
         <div class="modal-body" style="padding: 15px; overflow-y: auto;">
             
-            <div class="formulario-carrinho-topo" style="background-color: #f8f9fa; padding: 12px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #ddd;">
-                <label for="input-valor-hist" style="display: block; font-weight: 500; margin-bottom: 4px; font-size: 13px; color: #495057;">Valor (R$)</label>
-                <input type="number" id="input-valor-hist" step="0.01" min="0" placeholder="0.00" style="width: 100%; margin-bottom: 10px; padding: 6px; border: 1px solid #ced4da; border-radius: 4px; box-sizing: border-box;">
-                
-                <label for="input-responsavel-hist" style="display: block; font-weight: 500; margin-bottom: 4px; font-size: 13px; color: #495057;">Responsável</label>
-                <input type="text" id="input-responsavel-hist" placeholder="Nome do responsável" style="width: 100%; padding: 6px; border: 1px solid #ced4da; border-radius: 4px; box-sizing: border-box;">
-            </div>
+   <div class="formulario-carrinho-topo" style="background-color: #f8f9fa; padding: 12px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #ddd; display: flex; gap: 8px;">
+    
+    <div style="flex: 1;">
+        <label for="input-valor-hist" style="display: block; font-weight: 500; margin-bottom: 4px; font-size: 13px; color: #495057;">Valor Total (R$)</label>
+        <input type="number" id="input-valor-hist" step="0.01" min="0" placeholder="0,00" style="width: 100%; padding: 6px; border: 1px solid #ced4da; border-radius: 4px; box-sizing: border-box; height: 35px;">
+    </div>
+    
+    <div style="flex: 1;">
+        <label for="input-responsavel-hist" style="display: block; font-weight: 500; margin-bottom: 4px; font-size: 13px; color: #495057;">Responsável</label>
+        <input type="text" id="input-responsavel-hist" placeholder="Quem comprou" style="width: 100%; padding: 6px; border: 1px solid #ced4da; border-radius: 4px; box-sizing: border-box; height: 35px;">
+    </div>
+
+    <div style="flex: 1; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px;">
+        <input type="hidden" id="input-empresa-hist" value="">
+        
+        <button type="button" class="btn-opcao-empresa" onclick="selecionarEmpresa(this, 'Bruna construção')" style="width: 100%; padding: 5px; font-size: 11px; background-color: #fff; color: #495057; border: 1px solid #ced4da; border-radius: 4px; cursor: pointer; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; height: 22px; line-height: 1;">Bruna Const.</button>
+        <button type="button" class="btn-opcao-empresa" onclick="selecionarEmpresa(this, 'Gomes Lopes')" style="width: 100%; padding: 5px; font-size: 11px; background-color: #fff; color: #495057; border: 1px solid #ced4da; border-radius: 4px; cursor: pointer; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; height: 22px; line-height: 1;">Gomes Lopes</button>
+    </div>
+
+</div>
 
             <div class="carrinho-lista-secao">
                 <h4 style="margin-top: 0; margin-bottom: 10px; border-bottom: 1px dashed #ccc; padding-bottom: 5px; font-size: 14px; color: #495057;">Itens no Carrinho</h4>
