@@ -133,10 +133,8 @@ JSON.parse(localStorage.getItem("relatorioRefeicoes")) || [];
 
             );
 
-            console.log(
-                "Dados enviados para planilha"
-            );
-            
+            mostrarToast("Dados enviados para planilha");
+
             // ==========================================================
             // CORREÇÃO AQUI: Atualiza as tabelas assim que o envio termina!
             // ==========================================================
@@ -149,6 +147,7 @@ JSON.parse(localStorage.getItem("relatorioRefeicoes")) || [];
                 "Erro ao salvar:",
                 erro
             );
+            mostrarToast("Erro ao salvar os dados.");
 
         }
 
@@ -196,7 +195,7 @@ function registrarSaida(){
         !quantidade ||
         !funcionario
     ){
-        return alert("Preencha tudo");
+        return mostrarToast("Preencha tudo");
     }
 
     historico.unshift({
@@ -918,7 +917,7 @@ function marcarDevolvido(id){
 
     if(!item){
 
-        return alert("Item não encontrado");
+        return mostrarToast("Item não encontrado");
 
     }
 
@@ -949,7 +948,7 @@ function confirmarExtravio(){
 
     if(!motivo){
 
-        return alert("Digite o motivo");
+        return mostrarToast("Digite o motivo");
 
     }
 
@@ -960,7 +959,7 @@ function confirmarExtravio(){
 
     if(!item){
 
-        return alert("Item não encontrado");
+        return mostrarToast("Item não encontrado");
 
     }
 
@@ -1625,12 +1624,12 @@ function alterarStatusParaPago(numLinha, funcionarioId) {
       buscarERenderizarHistoricoServicos(funcionarioId);
       
     } else {
-      alert("Erro ao salvar pagamento: " + resultado.erro);
+      mostrarToast("Erro ao salvar pagamento: " + resultado.erro);
     }
   })
   .catch(erro => {
     console.error(erro);
-    alert("Falha de conexão ao registrar pagamento.");
+    mostrarToast("Falha de conexão ao registrar pagamento.");
   });
 }
 function lancarNovoServicoDireto() {
@@ -1645,7 +1644,7 @@ function lancarNovoServicoDireto() {
 
   // 1. Validação básica de preenchimento dos campos
   if (!dataInput || !tipoServico || !valorServico) {
-    alert("Por favor, preencha todos os campos (Data, Tipo e Valor) antes de salvar.");
+    mostrarToast("Por favor, preencha todos os campos (Data, Tipo e Valor) antes de salvar.");
     return;
   }
 
@@ -1692,7 +1691,7 @@ function lancarNovoServicoDireto() {
       if (typeof mostrarToast === "function") {
         mostrarToast("Serviço lançado com sucesso!");
       } else {
-        alert("Serviço lançado com sucesso!");
+        mostrarToast("Serviço lançado com sucesso!");
       }
 
       // Limpa os campos do formulário para o próximo lançamento
@@ -1706,12 +1705,12 @@ function lancarNovoServicoDireto() {
       }
 
     } else {
-      alert("Erro retornado pelo servidor: " + (resultado.erro || "Falha desconhecida"));
+      mostrarToast("Erro retornado pelo servidor: " + (resultado.erro || "Falha desconhecida"));
     }
   })
   .catch(erro => {
     console.error("Erro na requisição POST:", erro);
-    alert("Falha de comunicação com o servidor ao gravar o serviço.");
+    mostrarToast("Falha de comunicação com o servidor ao gravar o serviço.");
   })
   .finally(() => {
     // 6. Restaura as propriedades originais do botão
@@ -1782,7 +1781,7 @@ function carregarMateriaisPendentes() {
 
 if (btnParaCarrinho) {
     btnParaCarrinho.addEventListener("click", function () {
-        if (typeof mudarStatusParaComprado === "function") {
+        if (typeof mudarStatusParaComprado === "function") { 
             
             // [CORREÇÃO]: Passa "carrinho" em minúsculo para manter a consistência com o banco
             mudarStatusParaComprado(
@@ -1828,6 +1827,10 @@ function inicializarNavegacao() {
     
     const btnAdicionarMaterial = document.getElementById("btn-adicionar-material");
 
+if (typeof gerarListaDentroDoCarrinho === "function") {
+        const dadosMapeados = typeof dadosGlobaisDoSistema !== "undefined" ? dadosGlobaisDoSistema : {};
+        gerarListaDentroDoCarrinho(dadosMapeados);
+    }
     // Ação do Botão (+) para abrir a Seção/Aba de Materiais
     if (btnIrParaLista) {
         btnIrParaLista.addEventListener("click", function () {
@@ -1855,11 +1858,11 @@ function inicializarNavegacao() {
             const prioridadeSelecionada = inputPrioridade.value;
 
             if (!nomeMaterial) {
-                alert("Por favor, digite o nome do material.");
+                mostrarToast("Por favor, digite o nome do material.");
                 return;
             }
             if (!prioridadeSelecionada) {
-                alert("Por favor, selecione uma prioridade.");
+                mostrarToast("Por favor, selecione uma prioridade.");
                 return;
             }
 
@@ -1947,11 +1950,74 @@ function inicializarNavegacao() {
 // =========================================================================
 // FUNÇÃO: CONFIGURAR VALIDAÇÃO EM TEMPO REAL DO POP-UP DO CARRINHO
 // =========================================================================
+// --- FUNÇÃO AUXILIAR PARA OS BOTÕES (Muda a cor e joga o valor pro input) ---
+// 1. FUNÇÃO DE CONTROLE DOS BOTÕES (Coloque junto ao seu script)
+function selecionarEmpresa(botaoObjeto, nomeEmpresa) {
+    const inputEmpresa = document.getElementById("input-empresa-hist");
+    
+    // Reseta o estilo visual de todos os botões de empresa (volta para o padrão branco)
+    document.querySelectorAll('.btn-opcao-empresa').forEach(btn => {
+        btn.style.backgroundColor = "#ffffff";
+        btn.style.color = "#495057";
+        btn.style.borderColor = "#ced4da";
+    });
+    
+    // Aplica o estilo de selecionado no botão clicado (muda para fundo escuro)
+    botaoObjeto.style.backgroundColor = "#495057";
+    botaoObjeto.style.color = "#ffffff";
+    botaoObjeto.style.borderColor = "#495057";
+    
+    // Atualiza o valor oculto e avisa o validador original que houve uma mudança
+    if (inputEmpresa) {
+        inputEmpresa.value = nomeEmpresa;
+        inputEmpresa.dispatchEvent(new Event('input')); 
+    }
+}
+
+// 2. SUA FUNÇÃO ORIGINAL ADAPTADA PARA FAZER A TROCA DOS BOTÕES
 function configurarValidacaoCarrinho() {
     const inputValor = document.getElementById("input-valor-hist");
     const inputResponsavel = document.getElementById("input-responsavel-hist");
-    const inputEmpresa = document.getElementById("input-empresa-hist"); 
+    let inputEmpresa = document.getElementById("input-empresa-hist"); 
     const btnSalvarHistorico = document.getElementById("btn-salvar-historico");
+
+    // =========================================================================
+    // TRECHO ADICIONADO: ESCONDE O INPUT DE TEXTO E INJETA OS BOTÕES
+    // =========================================================================
+    if (inputEmpresa && inputEmpresa.type === "text") {
+        const colunaPai = inputEmpresa.parentElement;
+        
+        // Torna a caixa de texto invisível (ela continuará guardando o valor para o formulário)
+        inputEmpresa.type = "hidden";
+        inputEmpresa.value = ""; 
+        
+        // Alinha a coluna pai para comportar os botões empilhados
+        colunaPai.style.display = "flex";
+        colunaPai.style.flexDirection = "column";
+        colunaPai.style.justifyContent = "flex-end";
+        colunaPai.style.gap = "4px";
+
+        // Cria o botão da Bruna Construção
+        const btnBruna = document.createElement("button");
+        btnBruna.type = "button";
+        btnBruna.className = "btn-opcao-empresa";
+        btnBruna.innerText = "Bruna Const.";
+        btnBruna.style.cssText = "width: 100%; padding: 5px; font-size: 11px; background-color: #fff; color: #495057; border: 1px solid #ced4da; border-radius: 4px; cursor: pointer; text-align: center; height: 22px; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;";
+        btnBruna.onclick = function() { selecionarEmpresa(this, 'Bruna construção'); };
+
+        // Cria o botão da Gomes Lopes
+        const btnGomes = document.createElement("button");
+        btnGomes.type = "button";
+        btnGomes.className = "btn-opcao-empresa";
+        btnGomes.innerText = "Gomes Lopes";
+        btnGomes.style.cssText = "width: 100%; padding: 5px; font-size: 11px; background-color: #fff; color: #495057; border: 1px solid #ced4da; border-radius: 4px; cursor: pointer; text-align: center; height: 22px; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;";
+        btnGomes.onclick = function() { selecionarEmpresa(this, 'Gomes Lopes'); };
+
+        // Coloca os botões dentro da div onde ficava o input de texto
+        colunaPai.appendChild(btnBruna);
+        colunaPai.appendChild(btnGomes);
+    }
+    // =========================================================================
 
     if (inputValor && inputResponsavel && inputEmpresa && btnSalvarHistorico) {
         
@@ -1978,7 +2044,7 @@ function configurarValidacaoCarrinho() {
 }
 
 // =========================================================================
-// FUNÇÃO: VINCULAR GATILHO DE CLIQUE DO BOTÃO DE SALVAR HISTÓRICO
+// FUNÇÃO: VINCULAR GATILHO DE CLIQUE DO BOTÃO DE SALVAR HISTÓRICO (100% ORIGINAL)
 // =========================================================================
 function inicializarSalvamentoCarrinho() {
     const btnSalvarHistorico = document.getElementById("btn-salvar-historico");
@@ -1998,7 +2064,6 @@ function inicializarSalvamentoCarrinho() {
             btnSalvarHistorico.disabled = true;
             btnSalvarHistorico.innerText = "Finalizando...";
 
-            // Monta o objeto exatamente no padrão que sua rota 'historicoLista' espera no back
             const payload = {
                 historicoLista: {
                     valorTotal: parseFloat(valorValor),
@@ -2011,7 +2076,7 @@ function inicializarSalvamentoCarrinho() {
             const formBody = new URLSearchParams();
             formBody.append("payload", JSON.stringify(payload));
 
-            fetch("https://script.google.com/macros/s/AKfycbw36Zv_IdusCQWqMsqswymxSNQ5NjDULUQ_KebVRonzRTPR7Z6rDTtXqwfRodRc6guMPg/exec", {
+           fetch(urlWebApp, {
                 method: "POST",
                 mode: "no-cors",
                 headers: { 
@@ -2020,25 +2085,29 @@ function inicializarSalvamentoCarrinho() {
                 body: formBody
             })
             .then(() => {
-                alert("Carrinho finalizado e histórico registrado com sucesso! 🎉");
+                mostrarToast("Carrinho finalizado e histórico registrado com sucesso! 🎉");
                 
-                // Limpa os dados do modal
                 inputValor.value = "";
                 inputResponsavel.value = "";
                 inputEmpresa.value = "";
                 
-                // Fecha o popup do carrinho mudando o estilo do display para none
+                // Reseta visualmente a cor dos botões para o padrão branco após salvar
+                document.querySelectorAll('.btn-opcao-empresa').forEach(btn => {
+                    btn.style.backgroundColor = "#ffffff";
+                    btn.style.color = "#495057";
+                    btn.style.borderColor = "#ced4da";
+                });
+                
                 const popupCarrinho = document.getElementById("pop-up-carrinho");
                 if (popupCarrinho) popupCarrinho.style.display = "none";
 
-                // Atualiza as funções locais de listagem para limpar os itens comprados da tela
                 if (typeof carregarMateriaisPendentes === "function") {
                     carregarMateriaisPendentes();
                 }
             })
             .catch(erro => {
                 console.error("Erro ao salvar histórico do carrinho:", erro);
-                alert("Erro ao conectar com o servidor.");
+                mostrarToast("Erro ao conectar com o servidor.");
             })
             .finally(() => {
                 btnSalvarHistorico.disabled = false;
@@ -2046,6 +2115,7 @@ function inicializarSalvamentoCarrinho() {
             });
         });
     }
+    
 }
 
 // Chame as configurações na inicialização do DOM para deixar tudo vigiado e pronto
@@ -2270,11 +2340,9 @@ function mudarStatusParaComprado(nomeMaterial, elementoHtmlDoItem, novoStatus, i
     // =========================================================================
     // 1. CAPTURA DOS DADOS DIRETO DA TELA (Independente de variáveis ou Back-end)
     // =========================================================================
-    // Captura a tag de prioridade que está dentro do próprio bloco clicado
     const tagPrioridade = elementoHtmlDoItem.querySelector(".tag-prioridade");
     const textoPrioridade = tagPrioridade ? tagPrioridade.innerText.trim() : "Média";
 
-    // Criamos o objeto do item exatamente com os dados que o usuário está vendo
     const novoItemCarrinho = {
         material: nomeMaterial,
         prioridade: textoPrioridade,
@@ -2282,24 +2350,13 @@ function mudarStatusParaComprado(nomeMaterial, elementoHtmlDoItem, novoStatus, i
     };
 
     // =========================================================================
-    // 2. INJEÇÃO DIRETA NO CARRINHO LOCAL (LocalStorage)
+    // 2. INJEÇÃO DIRETA NO CARRINHO LOCAL (Modificado para limpar o anterior)
     // =========================================================================
-    let carrinhoAtual = [];
-    const cacheExistente = localStorage.getItem("carrinhoLocal");
-    
-    if (cacheExistente) {
-        try {
-            carrinhoAtual = JSON.parse(cacheExistente);
-        } catch(e) {
-            carrinhoAtual = [];
-        }
-    }
+    // Removido o bloco que trazia os itens antigos do localStorage.
+    // Agora criamos uma lista totalmente limpa (vazia) contendo apenas o novo item.
+    let carrinhoAtual = [novoItemCarrinho];
 
-    // Remove duplicados de segurança e adiciona o novo item no topo do carrinho
-    carrinhoAtual = carrinhoAtual.filter(item => (item.material || "").trim().toLowerCase() !== nomeMaterial.trim().toLowerCase());
-    carrinhoAtual.unshift(novoItemCarrinho);
-
-    // Salva o novo estado do carrinho no navegador instantaneamente
+    // Salva o novo estado limpo (apenas com o item atual) no navegador instantaneamente
     localStorage.setItem("carrinhoLocal", JSON.stringify(carrinhoAtual));
 
     // Atualiza também a variável global caso ela exista, para manter tudo em sincronia
@@ -2311,23 +2368,19 @@ function mudarStatusParaComprado(nomeMaterial, elementoHtmlDoItem, novoStatus, i
     // =========================================================================
     // 3. ATUALIZAÇÃO IMEDIATA DA INTERFACE
     // =========================================================================
-    // Remove o item da lista de pendentes na hora
     if (elementoHtmlDoItem) {
         elementoHtmlDoItem.remove();
     }
     
-    // Verifica se a lista de pendentes esvaziou
     const container = document.getElementById(idContainer);
     if (container && container.children.length === 0) {
         container.innerHTML = msgVazioHtml;
     }
 
-    // Mostra o aviso Toast de sucesso
     if (typeof mostrarToast === "function") {
         mostrarToast(`Adicionado ao carrinho!`, "sucesso");
     }
 
-    // Força o desenho do carrinho na tela usando os dados locais que acabamos de criar
     if (typeof gerarListaDentroDoCarrinho === "function") {
         gerarListaDentroDoCarrinho();
     }
