@@ -151,7 +151,7 @@ JSON.parse(localStorage.getItem("relatorioRefeicoes")) || [];
 
         }
 
-    }, 2000);
+    }, 1000);
 
 }
 
@@ -374,25 +374,15 @@ function renderHistorico(){
 // ===========================
 
 function salvarFuncionario(){
-
-    const nome =
-    document.getElementById("nomeFuncionario").value;
-
-    const funcao =
-    document.getElementById("funcaoFuncionario").value;
-
-    // CAPTURA OS NOVOS CAMPOS DO FORMULÁRIO
-    const entrada =
-    document.getElementById("entradaFuncionario").value;
-
-    const saida =
-    document.getElementById("saidaFuncionario").value;
-
-    const alojamento =
-    document.getElementById("alojamentoFuncionario").value;
-
-    const vr =
-    document.getElementById("vrFuncionario").value;
+    const nome = document.getElementById("nomeFuncionario").value;
+    const funcao = document.getElementById("funcaoFuncionario").value;
+    const entrada = document.getElementById("entradaFuncionario").value;
+    const saida = document.getElementById("saidaFuncionario").value;
+    const alojamento = document.getElementById("alojamentoFuncionario").value;
+    
+    // CAPTURA DOS CAMPOS (VR volta a ser select, VT é o novo input de valor)
+    const vr = document.getElementById("vrFuncionario").value;
+    const vtInput = document.getElementById("vtFuncionario").value.trim();
 
     // VALIDAÇÃO: Garante que todos os campos obrigatórios estejam preenchidos
     if(!nome || !funcao || !entrada || !saida){
@@ -400,9 +390,11 @@ function salvarFuncionario(){
         return;
     }
 
+    // TRATAMENTO DO VALE TRANSPORTE: Converte para número puro (se vazio, vira 0)
+    const valeTransporteValor = vtInput !== "" ? Number(vtInput) : 0;
+
     // VERIFICA SE ESTÁ EDITANDO OU CRIANDO UM NOVO
     if (idFuncionarioEditando !== null) {
-        // Localiza o funcionário existente pelo ID guardado no controle de edição
         const funcionario = funcionarios.find(f => f.id === idFuncionarioEditando);
         
         if (funcionario) {
@@ -411,22 +403,23 @@ function salvarFuncionario(){
             funcionario.entrada = Number(entrada);
             funcionario.saida = Number(saida);
             funcionario.alojamento = alojamento;
-            funcionario.vr = vr;
+            funcionario.vr = vr; // Envia "Sim" ou "Não" direto do select
+            funcionario.valeTransporte = valeTransporteValor;
             
             mostrarToast("Funcionário atualizado com sucesso!");
         }
-        // Reseta o controle de edição para os próximos cliques voltarem a ser novos cadastros
         idFuncionarioEditando = null;
     } else {
-        // ADICIONA O NOVO FUNCIONÁRIO AO ARRAY COM TODAS AS NOVAS VARIÁVEIS
+        // ADICIONA O NOVO FUNCIONÁRIO AO ARRAY
         funcionarios.push({
             id: Date.now(),
             nome,
             funcao,
-            entrada: Number(entrada), // Salva como número inteiro puro (ex: 8)
-            saida: Number(saida),     // Salva como número inteiro puro (ex: 17)
-            alojamento,               // "Sim" ou "Não"
-            vr                        // "Sim" ou "Não"
+            entrada: Number(entrada),
+            saida: Number(saida),
+            alojamento,
+            vr, // Envia "Sim" ou "Não" direto do select
+            valeTransporte: valeTransporteValor
         });
 
         mostrarToast("Funcionário cadastrado com sucesso!");
@@ -444,9 +437,10 @@ function salvarFuncionario(){
     document.getElementById("entradaFuncionario").value = "";
     document.getElementById("saidaFuncionario").value = "";
     document.getElementById("alojamentoFuncionario").value = "Não";
-    document.getElementById("vrFuncionario").value = "Não";
+    document.getElementById("vrFuncionario").value = "Não"; // Reseta o select para "Não"
+    document.getElementById("vtFuncionario").value = "";    // Limpa o input do VT
 
-    // Restaura o texto padrão do botão caso ele tenha sido alterado pela função editar
+    // Restaura o texto padrão do botão
     const botaoSalvar = document.querySelector("button[onclick='salvarFuncionario()']");
     if (botaoSalvar) {
         botaoSalvar.textContent = "Salvar Funcionário";
@@ -454,118 +448,96 @@ function salvarFuncionario(){
 }
 
 function renderFuncionarios(lista = funcionarios){
-
-    const div =
-
-    document.getElementById("listaFuncionarios");
-if (!div) {
+    const div = document.getElementById("listaFuncionarios");
+    if (!div) {
         console.warn("Aviso: Elemento 'listaFuncionarios' não está visível nesta tela. Renderização ignorada.");
         return;
     }
 
     div.innerHTML = "";
-
     const hoje = new Date().toLocaleDateString("pt-BR");
     const agoraTimestamp = new Date().getTime();
-    const tresHorasEmMs = 3 * 60 * 60 * 1000; // 3 horas em milissegundos
+    const tresHorasEmMs = 3 * 60 * 60 * 1000;
 
     lista.forEach(funcionario => {
-
-        // Busca o registro de ponto do funcionário para o dia de hoje
         const registro = pontos.find(p => p.funcionarioId === funcionario.id && p.data === hoje);
-
-        let classeStatus = "vermelho"; // Padrão: Não bateu o ponto ainda
+        let classeStatus = "vermelho";
 
         if (registro) {
-            if (registro.saida) {
-                // 4ª Batida realizada: Saída Final
-                classeStatus = "azul";
-            } 
-            else if (registro.almocoRetorno) {
-                // 3ª Batida realizada: Volta do Almoço
-                classeStatus = "laranja";
-            } 
-            else if (registro.almocoSaida) {
-                // 2ª Batida realizada: Saída para Almoço
-                classeStatus = "verde";
-            } 
+            if (registro.saida) { classeStatus = "azul"; } 
+            else if (registro.almocoRetorno) { classeStatus = "laranja"; } 
+            else if (registro.almocoSaida) { classeStatus = "verde"; } 
             else if (registro.entrada) {
-                // 1ª Batida realizada: Entrada do dia
-                // Verifica se já se passaram mais de 3 horas desde a entrada
                 const tempoDecorrido = agoraTimestamp - (registro.timestampEntrada || agoraTimestamp);
-                
-                if (tempoDecorrido > tresHorasEmMs) {
-                    classeStatus = "laranja"; // Passou de 3 horas
-                } else {
-                    classeStatus = "verde"; // Menos de 3 horas
-                }
+                classeStatus = tempoDecorrido > tresHorasEmMs ? "laranja" : "verde";
             }
         }
 
-        // Garante a exibição correta dos horários do contrato
         const entradaExibicao = (funcionario.entrada !== undefined && funcionario.entrada !== null) ? funcionario.entrada : "--";
         const saidaExibicao = (funcionario.saida !== undefined && funcionario.saida !== null) ? funcionario.saida : "--";
+        
+        // Exibição dos benefícios nos cards da tela
+        const vtExibicao = funcionario.valeTransporte ? Number(funcionario.valeTransporte).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : "R$ 0,00";
+        const vrExibicao = (funcionario.vr === "Sim" || Number(funcionario.vr) > 0) ? "R$ 17,00" : "Não";
 
         div.innerHTML += `
-
         <div class="funcionario ${classeStatus}">
-
             <strong>${funcionario.nome}</strong>
-
             <p>Função: ${funcionario.funcao}</p>
-
             <p>Horário: ${entradaExibicao}h às ${saidaExibicao}h</p>
-
+            <p><small>VR: ${vrExibicao} | VT: ${vtExibicao}</small></p>
             <div class="botoes">
-
-                <button
-                    class="btn-editar"
-                    onclick="editarFuncionario(${funcionario.id})"
-                >
-                    Editar
-                </button>
-
-                <button
-                    class="btn-ponto"
-                    onclick="baterPonto(${funcionario.id})"
-                >
-                    Bater Ponto
-                </button>
-
+                <button class="btn-editar" onclick="editarFuncionario(${funcionario.id})">Editar</button>
+                <button class="btn-ponto" onclick="baterPonto(${funcionario.id})">Bater Ponto</button>
             </div>
-
         </div>
-
         `;
-
     });
-
 }
+
 function editarFuncionario(id){
-    const funcionario = funcionarios.find(f => f.id === id);
-    if(!funcionario) return;
+    // TRAVA ATRAVÉS DA INTERFACE: Busca o botão de atualizar na tela
+    const botaoAtualizar = document.querySelector("button[onclick='atualizarDadosDaPlanilha()']");
+    
+    // Se o botão existir e estiver desativado (ou mostrando a ampulheta), bloqueia a edição na hora
+    if (botaoAtualizar && (botaoAtualizar.disabled || botaoAtualizar.innerHTML === "⌛")) {
+        mostrarToast("Aguarde a atualização dos dados terminar para poder editar!");
+        return;
+    }
 
-    // Guarda o ID do funcionário que estamos editando
-    idFuncionarioEditando = id;
+    // Garante compatibilidade total convertendo ambos os IDs para string/texto na busca
+    const funcionario = funcionarios.find(f => String(f.id).trim() === String(id).trim());
+    
+    if(!funcionario) {
+        console.error("Funcionário com ID " + id + " não foi encontrado no array local.");
+        mostrarToast("Erro: Funcionário não localizado internamente.");
+        return;
+    }
 
-    // Preenche os campos do formulário de criação com os dados atuais dele
-    document.getElementById("nomeFuncionario").value = funcionario.nome;
-    document.getElementById("funcaoFuncionario").value = funcionario.funcao;
-    document.getElementById("entradaFuncionario").value = funcionario.entrada || "";
-    document.getElementById("saidaFuncionario").value = funcionario.saida || "";
+    // Guarda o ID do funcionário que estamos editando (mantendo o tipo original)
+    idFuncionarioEditando = funcionario.id;
+
+    // Preenche os campos do formulário com os dados atuais dele
+    document.getElementById("nomeFuncionario").value = funcionario.nome || "";
+    document.getElementById("funcaoFuncionario").value = funcionario.funcao || "";
+    document.getElementById("entradaFuncionario").value = funcionario.entrada !== undefined ? funcionario.entrada : "";
+    document.getElementById("saidaFuncionario").value = funcionario.saida !== undefined ? funcionario.saida : "";
     document.getElementById("alojamentoFuncionario").value = funcionario.alojamento || "Não";
-    document.getElementById("vrFuncionario").value = funcionario.vr || "Não";
+    
+    // Tratamento do Select do VR
+    document.getElementById("vrFuncionario").value = (funcionario.vr === "Sim" || Number(funcionario.vr) > 0) ? "Sim" : "Não";
+    
+    // Tratamento do Input do Vale Transporte
+    document.getElementById("vtFuncionario").value = funcionario.valeTransporte !== undefined ? funcionario.valeTransporte : "0";
 
-    // Altera o texto do botão de salvar para dar um feedback visual
+    // Altera o texto do botão de salvar para dar o feedback de atualização
     const botaoSalvar = document.querySelector("button[onclick='salvarFuncionario()']");
     if(botaoSalvar) {
         botaoSalvar.textContent = "Atualizar Dados";
     }
 
-    // Alerta discreto avisando que os dados subiram para o formulário
+    // Alerta e rola a página para o topo
     mostrarToast("Dados carregados no formulário acima!");
-    
-    // Opcional: Rola a tela suavemente para o topo onde está o formulário
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -629,7 +601,7 @@ function mostrarToast(mensagem) {
     setTimeout(() => {
         toast.style.opacity = "0";
         setTimeout(() => { toast.remove(); }, 300);
-    }, 3000);
+    }, 1000);
 }
 // ======================================
 // BATER PONTO (LOGICA DE 4 BATIDAS E CORES)
