@@ -219,48 +219,57 @@
  <section id="aba-ponto" class="aba">
 
             <div class="card">
+    <h2>Adicionar Funcionário</h2>
 
-                <h2>Adicionar Funcionário</h2>
+    <label>Nome</label>
+    <input type="text" id="nomeFuncionario">
 
-                <label>Nome</label>
-                <input type="text" id="nomeFuncionario">
+    <label>Função</label>
+    <input type="text" id="funcaoFuncionario">
 
-                <label>Função</label>
-                <input type="text" id="funcaoFuncionario">
+    <div style="display: flex; gap: 10px;">
+        <div style="flex: 1;">
+            <label>Horário Entrada</label>
+            <input type="number" id="entradaFuncionario" min="0" max="23" placeholder="Ex: 8">
+        </div>
+        <div style="flex: 1;">
+            <label>Horário Saída</label>
+            <input type="number" id="saidaFuncionario" min="0" max="23" placeholder="Ex: 17">
+        </div>
+    </div>
 
-                <div style="display: flex; gap: 10px;">
-                    <div style="flex: 1;">
-                        <label>Horário Entrada</label>
-                        <input type="number" id="entradaFuncionario" min="0" max="23" placeholder="Ex: 8">
-                    </div>
-                    <div style="flex: 1;">
-                        <label>Horário Saída</label>
-                        <input type="number" id="saidaFuncionario" min="0" max="23" placeholder="Ex: 17">
-                    </div>
-                </div>
+    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+        <div style="flex: 1;">
+            <label>Alojado</label>
+            <select id="alojamentoFuncionario" style="width: 100%;">
+                <option value="Não">Não</option>
+                <option value="Sim">Sim</option>
+            </select>
+        </div>
+        <div style="flex: 1;">
+            <label>VR</label>
+            <select id="vrFuncionario" style="width: 100%;">
+                <option value="Não">Não</option>
+                <option value="Sim">Sim</option>
+            </select>
+        </div>
+        <div style="flex: 1;">
+            <label>VT</label>
+            <input 
+                type="number" 
+                id="vtFuncionario" 
+                step="0.01" 
+                min="0" 
+                placeholder="Valor (R$)" 
+                style="width: 100%; box-sizing: border-box;"
+            >
+        </div>
+    </div>
 
-                <div style="display: flex; gap: 10px;">
-                    <div style="flex: 1;">
-                        <label>Alojamento</label>
-                        <select id="alojamentoFuncionario">
-                            <option value="Não">Não</option>
-                            <option value="Sim">Sim</option>
-                        </select>
-                    </div>
-                    <div style="flex: 1;">
-                        <label>VR (Vale Refeição)</label>
-                        <select id="vrFuncionario">
-                            <option value="Não">Não</option>
-                            <option value="Sim">Sim</option>
-                        </select>
-                    </div>
-                </div>
-
-                <button onclick="salvarFuncionario()">
-                    Salvar Funcionário
-                </button>
-
-            </div>
+    <button onclick="salvarFuncionario()">
+        Salvar Funcionário
+    </button>
+</div>
 
             <div class="card">
 
