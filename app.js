@@ -1144,29 +1144,28 @@ function gerarListaFood() {
     // 3. Desenha a lista atualizada na tela do usuário
     renderListaFood();
 
-    // 4. Cria o objeto do relatório com Data, Hora e Total
+    // 4. Cria o objeto do relatório com Data, Hora e Total do dia atual
     const novoRegistroRefeicao = {
         data: hoje,
         hora: hora,
         total: listaFoodAtual.length
     };
 
-    // 5. Adiciona ao seu array global de relatórios (garanta que essa variável exista no topo do app.js)
-    if (typeof relatorioRefeicoes === 'undefined') {
-        window.relatorioRefeicoes = []; 
-    }
+    // =====================================================================
+    // AJUSTE CRÍTICO: LIMPEZA E ATUALIZAÇÃO DO LOCALSTORAGE
+    // =====================================================================
     
-    // Evita duplicar vários relatórios idênticos no mesmo minuto se clicarem várias vezes
-    const jaExiste = relatorioRefeicoes.find(r => r.data === hoje && r.hora === hora);
-    if (!jaExiste) {
-        relatorioRefeicoes.push(novoRegistroRefeicao);
-        
-        // Salva localmente no localStorage do relatório também, se desejar
-        localStorage.setItem("relatorioRefeicoes", JSON.stringify(relatorioRefeicoes));
-    }
+    // 1º Passo: Remove completamente qualquer dado antigo deste relatório do cache
+    localStorage.removeItem("relatorioRefeicoes");
+
+    // 2º Passo: Define o array global contendo APENAS o registro fresco de hoje
+    window.relatorioRefeicoes = [novoRegistroRefeicao];
+    
+    // 3º Passo: Salva no localStorage o array limpo, contendo apenas o dia atual
+    localStorage.setItem("relatorioRefeicoes", JSON.stringify(window.relatorioRefeicoes));
 
     // =====================================================================
-    // ATENÇÃO: Modifique o corpo do seu 'salvarTudo()' para incluir o 'relatorioRefeicoes'
+    // 4º Passo: Envia os dados limpos para a planilha (banco de dados)
     // =====================================================================
     salvarTudo(); 
 }
