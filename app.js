@@ -1256,6 +1256,9 @@ function abrirNovaAbaIndicadores() {
 }
 
 // Mecanismo que faz o cruzamento dos dados locais (Cadastro) + dados remotos (Backup)
+// =========================================================================
+// FUNÇÃO PRINCIPAL UNIFICADA: Busca Indicadores e Aciona o Histórico de Pontos
+// =========================================================================
 function buscarFuncionarioIndividual() {
   const termoBusca = document.getElementById("inputBuscaFuncionario").value.trim().toLowerCase();
   const feedback = document.getElementById("mensagemFeedback");
@@ -1272,7 +1275,7 @@ function buscarFuncionarioIndividual() {
   feedback.style.color = "#f39c12";
   feedback.innerText = "Localizando dados cadastrais...";
 
-  // Seu sistema armazena a lista de funcionários na memória. Vamos buscar nela:
+  // Captura a lista de funcionários em memória no Front-end
   let listaCadastrada = [];
   if (typeof funcionarios !== "undefined") {
     listaCadastrada = funcionarios;
@@ -1280,7 +1283,7 @@ function buscarFuncionarioIndividual() {
     listaCadastrada = listaFuncionariosMemoria;
   }
 
-  // Localiza o funcionário comparando ID numérico ou trecho do nome
+  // Encontra o funcionário localmente para carregar os dados base de registro
   const funcCadastrado = listaCadastrada.find(f => 
     String(f.id).toLowerCase() === termoBusca || 
     String(f.nome).toLowerCase().includes(termoBusca)
@@ -1293,57 +1296,176 @@ function buscarFuncionarioIndividual() {
     return;
   }
 
-  feedback.innerText = "Buscando saldos e faltas na planilha de backup...";
+  feedback.style.color = "#f39c12";
+  feedback.innerText = "Buscando indicadores atualizados na planilha...";
   btn.disabled = true;
 
-  // Monta o link utilizando a sua variável global 'urlWebApp' e adiciona a ação
-  const urlFinal = `${urlWebApp}?acao=consultarIndicadores`;
+  // 1ª BUSCA: Obtém os indicadores de 10 colunas da aba Indicadores_Mes
+  const urlFinalIndicadores = `${urlWebApp}?acao=consultarIndicadores`;
 
-  fetch(urlFinal)
+  fetch(urlFinalIndicadores)
     .then(response => response.json())
     .then(retorno => {
-      btn.disabled = false;
-
       if (retorno.sucesso) {
-        // Localiza os indicadores correspondentes usando a chave primária (ID)
-        const indicadores = retorno.dados.find(i => String(i.id).trim() === String(funcCadastrado.id).trim());
+        // Encontra o registro cruzando o ID limpo
+        const indicadores = retorno.dados.find(i => {
+          const idPlanilha = String(i.id || "").replace("'", "").trim();
+          return idPlanilha === String(funcCadastrado.id).trim();
+        });
 
-        // Define valores de segurança caso o funcionário ainda não tenha pontos registrados no mês
-        const saldoFinal = indicadores ? indicadores.saldoBancoHoras : "00:00";
-        const faltasFinais = indicadores ? indicadores.faltas : 0;
+        if (!indicadores) {
+          btn.disabled = false;
+          feedback.style.color = "#e74c3c";
+          feedback.innerText = "Dados do funcionário não encontrados na aba de Indicadores.";
+          cardResultado.style.display = "none";
+          return;
+        }
 
-        // Preenche o layout com o cruzamento dos dados
+        // =========================================================================
+        // CAPTURA DOS INDICADORES CONSOLIDADOS (10 COLUNAS)
+        // =========================================================================
+        let saldoSemana = String(indicadores.stringHoraSemana || "00:00").replace("'", "").trim();
+        let saldoFimSemana = String(indicadores.stringHoraFimDeSemana || "00:00").replace("'", "").trim(); 
+        const faltasFinais = indicadores.totalFaltasCalculado ?? 0;
+        
+        // Tratamento do valor de Horas Extras em Dinheiro (Coluna J)
+        let totalHorasExtrasR$ = "R$ 0,00";
+        const valorHE = indicadores.valorHorasExtrasFinanceiro;
+        if (valorHE !== undefined && valorHE !== null) {
+          if (typeof valorHE === "number") {
+            totalHorasExtrasR$ = valorHE.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+          } else {
+            totalHorasExtrasR$ = String(valorHE).trim();
+            if (!totalHorasExtrasR$.toUpperCase().startsWith("R$")) {
+              totalHorasExtrasR$ = "R$ " + totalHorasExtrasR$;
+            }
+          }
+        }
+
+        // =========================================================================
+        // PREENCHIMENTO DOS CAMPOS DO LAYOUT (HTML)
+        // =========================================================================
         document.getElementById("viewId").innerText = funcCadastrado.id;
         document.getElementById("viewNome").innerText = funcCadastrado.nome;
-        document.getElementById("viewFuncao").innerText = funcCadastrado.funcao || "Não cadastrada";
-        document.getElementById("viewAlojado").innerText = funcCadastrado.alojamento || funcCadastrado.alojamentoFuncionario || "Não";
-        document.getElementById("viewVR").innerText = funcCadastrado.vr || funcCadastrado.vrFuncionario || "Não";
+        document.getElementById("viewFuncao").innerText = indicadores.funcao || funcCadastrado.funcao || "Não cadastrada";
+        document.getElementById("viewAlojado").innerText = funcCadastrado.alojamento || "Não";
+        document.getElementById("viewVR").innerText = indicadores.valorVRPlanilha || funcCadastrado.vr || "Não";
 
-        // Regra de cor para o saldo: vermelho para devedor (-), verde para positivo ou zerado
-        const elSaldo = document.getElementById("viewSaldo");
-        elSaldo.innerText = saldoFinal;
-        elSaldo.style.color = saldoFinal.startsWith("-") ? "#e74c3c" : "#2ecc71";
-        elSaldo.style.fontWeight = "bold";
+        // Aplica Banco de Horas Semanal
+        const elSaldoSemana = document.getElementById("viewSaldo");
+        if (elSaldoSemana) {
+          elSaldoSemana.innerText = saldoSemana;
+          elSaldoSemana.style.color = saldoSemana.trim().startsWith("-") ? "#e74c3c" : "#2ecc71";
+          elSaldoSemana.style.fontWeight = "bold";
+        }
 
-        document.getElementById("viewFaltas").innerText = `${faltasFinais} falta(s) detectada(s)`;
+        // Aplica Banco de Horas Fim de Semana
+        const elSaldoFimSemana = document.getElementById("viewSaldoFimSemana");
+        if (elSaldoFimSemana) {
+          elSaldoFimSemana.innerText = saldoFimSemana;
+          elSaldoFimSemana.style.color = saldoFimSemana.trim().startsWith("-") ? "#e74c3c" : "#2ecc71";
+          elSaldoFimSemana.style.fontWeight = "bold";
+        }
 
+        // Aplica Contador de Faltas
+        const elFaltas = document.getElementById("viewFaltas");
+        if (elFaltas) {
+          elFaltas.innerText = `${faltasFinais} falta(s) detectada(s)`;
+        }
+
+        // Aplica Total Financeiro
+        const elTotalHE = document.getElementById("viewTotalHorasExtras");
+        if (elTotalHE) {
+          elTotalHE.innerText = totalHorasExtrasR$;
+          elTotalHE.style.fontWeight = "bold";
+        }
+
+        // Exibe o painel principal com os dados consolidados
         feedback.innerText = "";
-        cardResultado.style.display = "block"; // Revela a ficha completa do funcionário
+        cardResultado.style.display = "block";
 
         // =========================================================================
-        // LOCAL CORRETO: Dispara o histórico após renderizar o card e usa o ID correto
+        // DISPARO DOS HISTÓRICOS DETALHADOS (SERVIÇOS E PONTOS BRUTOS)
         // =========================================================================
-        buscarERenderizarHistoricoServicos(funcCadastrado.id);
+        
+        // 1. Histórico de serviços prestados (Contratos/Diárias)
+        if (typeof buscarERenderizarHistoricoServicos === "function") {
+          buscarERenderizarHistoricoServicos(funcCadastrado.id);
+        }
+
+        // 2. Aciona a busca do Espelho de Ponto Individual na Mini Tabela Mobile
+        buscarEExibirPontosMobile(funcCadastrado.id, btn);
 
       } else {
+        btn.disabled = false;
         feedback.style.color = "#e74c3c";
-        feedback.innerText = "Erro ao ler a planilha de backup: " + retorno.mensagem;
+        feedback.innerText = "Erro ao ler a planilha de indicadores: " + retorno.mensagem;
       }
     })
     .catch(erro => {
       btn.disabled = false;
       feedback.style.color = "#e74c3c";
-      feedback.innerText = "Falha de conexão com o servidor: " + erro;
+      feedback.innerText = "Falha de conexão ao buscar indicadores: " + erro;
+    });
+}
+
+// =========================================================================
+// SUBFUNÇÃO SECUNDÁRIA: Busca e Renderiza as Batidas de Ponto Diárias
+// =========================================================================
+function buscarEExibirPontosMobile(idFuncionario, btnPrincipal) {
+  const containerCorpo = document.getElementById("corpoPontoMobile");
+  const feedbackPonto = document.getElementById("feedbackPontoMobile");
+  
+  if (!containerCorpo) return; 
+  
+  containerCorpo.innerHTML = "";
+  feedbackPonto.innerText = "Carregando histórico diário de marcações...";
+  feedbackPonto.style.color = "#f39c12";
+
+  // 2ª BUSCA: Obtém as linhas diárias brutas filtrando pelo ID do funcionário
+  const urlFinalPontos = `${urlWebApp}?acao=consultarHistoricoPontos&idFuncionario=${idFuncionario}`;
+
+  fetch(urlFinalPontos)
+    .then(response => response.json())
+    .then(retorno => {
+      // Libera o botão de busca principal, pois todo o fluxo terminou
+      if (btnPrincipal) btnPrincipal.disabled = false;
+
+      if (retorno.sucesso && retorno.dados && retorno.dados.length > 0) {
+        feedbackPonto.innerText = `Exibindo os últimos ${retorno.dados.length} dias registrados:`;
+        feedbackPonto.style.color = "#27ae60";
+
+        retorno.dados.forEach((ponto, index) => {
+          const tr = document.createElement("tr");
+          
+          if (index % 2 === 0) {
+            tr.style.backgroundColor = "#fafbfc";
+          }
+          tr.style.borderBottom = "1px solid #f1f2f6";
+
+          tr.innerHTML = `
+            <td style="padding: 8px 4px; font-weight: bold; color: #2c3e50;">${ponto.data}</td>
+            <td style="padding: 8px 4px; color: #27ae60; font-weight: 500;">${ponto.entrada}</td>
+            <td style="padding: 8px 4px; color: #7f8c8d;">${ponto.almocoSaida}</td>
+            <td style="padding: 8px 4px; color: #7f8c8d;">${ponto.almocoRetorno}</td>
+            <td style="padding: 8px 4px; color: #e74c3c; font-weight: 500;">${ponto.saida}</td>
+          `;
+          
+          containerCorpo.appendChild(tr);
+        });
+      } else {
+        const msgErro = retorno.mensagem || "Nenhuma marcação de ponto encontrada para este funcionário.";
+        feedbackPonto.innerText = msgErro;
+        feedbackPonto.style.color = "#c0392b";
+        containerCorpo.innerHTML = `<tr><td colspan="5" style="padding: 15px; color: #95a5a6; font-style: italic;">Sem marcações diárias</td></tr>`;
+      }
+    })
+    .catch(erro => {
+      if (btnPrincipal) btnPrincipal.disabled = false;
+      console.error("Erro na requisição do ponto:", erro);
+      feedbackPonto.innerText = "Não foi possível carregar o espelho de ponto diário.";
+      feedbackPonto.style.color = "#e74c3c";
+      containerCorpo.innerHTML = `<tr><td colspan="5" style="padding: 15px; color: #e74c3c;">Erro de carregamento</td></tr>`;
     });
 }
 
