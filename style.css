@@ -525,3 +525,111 @@ button{
         width: 80%;
     }
 }
+
+/* ========================================================
+   ESTILOS ESPECÍFICOS PARA A NOVA ABA INICIAL
+   ======================================================== */
+
+/* Card específico reduzido para a tela de boas-vindas */
+.card-inicial-compacto {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 12px 18px;
+    margin-bottom: 12px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.06);
+    border-left: 4px solid #0f5c7a;
+}
+
+.card-inicial-compacto h2 {
+    font-size: 16px;
+    margin-bottom: 4px;
+    color: #0f5c7a;
+}
+
+.subtitulo {
+    font-size: 12px;
+    color: #7f8c8d;
+    margin-bottom: 12px;
+}
+
+/* Grupo de pesquisa simplificado */
+.grupo-busca-inicial {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.grupo-busca-inicial label {
+    font-size: 12px;
+    color: #34495e;
+    margin: 0;
+}
+
+/* Input menor e mais discreto */
+.input-principal-pequeno {
+    width: 100%;
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid #bdc3c7;
+    font-size: 13px;
+    background-color: #fcfcfc;
+    margin-bottom: 2px;
+}
+
+.input-principal-pequeno:focus {
+    border-color: #0f5c7a;
+    outline: none;
+    background-color: #ffffff;
+}
+
+.dica-busca {
+    font-size: 10px;
+    color: #95a5a6;
+    font-style: italic;
+}
+
+/* Grade organizada para botões pequenos */
+.grade-botoes-compactos {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 8px;
+    margin-top: 10px;
+}
+
+/* Botões de tamanho pequeno (Small) */
+.btn-inicial-sm {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #2c3e50;
+    background: #f8f9fa;
+    border: 1px solid #dcdde1;
+    border-radius: 6px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s ease;
+}
+
+.btn-inicial-sm span {
+    font-size: 14px;
+}
+
+/* Efeito de hover suave nos botões */
+.btn-inicial-sm:hover {
+    background: #0f5c7a;
+    color: #ffffff;
+    border-color: #0f5c7a;
+    transform: translateY(-1px);
+}
+
+/* Destaque sutil para o botão de indicadores solicitado */
+.btn-indicadores {
+    background: #edf7fa;
+    border-color: #bce1ec;
+    color: #0f5c7a;
+}
