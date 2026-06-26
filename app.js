@@ -33,13 +33,19 @@ document.addEventListener("DOMContentLoaded", () => {
         inicializarNavegacao();
     }
 
-        // 2. Mostra a tela de estoque
-        const abaEstoque = document.getElementById("aba-estoque");
-        if (abaEstoque) {
-            abaEstoque.classList.add("ativa");
-            abaEstoque.style.display = "block";
+       // 2. Mostra a Tela Inicial (substituindo o estoque)
+        const abaInicial = document.getElementById("aba-inicial");
+        if (abaInicial) {
+            abaInicial.classList.add("ativa");
+            abaInicial.style.display = "block";
         }
 
+        // Garante que a tela de estoque fique escondida na inicialização
+        const abaEstoque = document.getElementById("aba-estoque");
+        if (abaEstoque) {
+            abaEstoque.classList.remove("ativa");
+            abaEstoque.style.display = "none";
+        }
         // 3. Mostra o menu de navegação inferior
         const menu = document.querySelector(".menu");
         if (menu) {
@@ -154,7 +160,6 @@ JSON.parse(localStorage.getItem("relatorioRefeicoes")) || [];
     }, 1000);
 
 }
-
 
 
 // ===========================
@@ -374,77 +379,149 @@ function renderHistorico(){
 // ===========================
 
 function salvarFuncionario(){
+
     const nome = document.getElementById("nomeFuncionario").value;
+
     const funcao = document.getElementById("funcaoFuncionario").value;
+
     const entrada = document.getElementById("entradaFuncionario").value;
+
     const saida = document.getElementById("saidaFuncionario").value;
+
     const alojamento = document.getElementById("alojamentoFuncionario").value;
-    
+
+   
+
     // CAPTURA DOS CAMPOS (VR volta a ser select, VT é o novo input de valor)
+
     const vr = document.getElementById("vrFuncionario").value;
+
     const vtInput = document.getElementById("vtFuncionario").value.trim();
 
+
+
     // VALIDAÇÃO: Garante que todos os campos obrigatórios estejam preenchidos
+
     if(!nome || !funcao || !entrada || !saida){
+
         mostrarToast("Por favor, preencha todos os campos do funcionário.");
+
         return;
+
     }
+
+
 
     // TRATAMENTO DO VALE TRANSPORTE: Converte para número puro (se vazio, vira 0)
+
     const valeTransporteValor = vtInput !== "" ? Number(vtInput) : 0;
 
+
+
     // VERIFICA SE ESTÁ EDITANDO OU CRIANDO UM NOVO
+
     if (idFuncionarioEditando !== null) {
+
         const funcionario = funcionarios.find(f => f.id === idFuncionarioEditando);
-        
+
+       
+
         if (funcionario) {
+
             funcionario.nome = nome;
+
             funcionario.funcao = funcao;
+
             funcionario.entrada = Number(entrada);
+
             funcionario.saida = Number(saida);
+
             funcionario.alojamento = alojamento;
+
             funcionario.vr = vr; // Envia "Sim" ou "Não" direto do select
+
             funcionario.valeTransporte = valeTransporteValor;
-            
+
+           
+
             mostrarToast("Funcionário atualizado com sucesso!");
+
         }
+
         idFuncionarioEditando = null;
+
     } else {
+
         // ADICIONA O NOVO FUNCIONÁRIO AO ARRAY
+
         funcionarios.push({
+
             id: Date.now(),
+
             nome,
+
             funcao,
+
             entrada: Number(entrada),
+
             saida: Number(saida),
+
             alojamento,
+
             vr, // Envia "Sim" ou "Não" direto do select
+
             valeTransporte: valeTransporteValor
+
         });
 
+
+
         mostrarToast("Funcionário cadastrado com sucesso!");
+
     }
+
+
 
     // Salva tudo localmente e envia para a planilha
+
     salvarTudo();
 
+
+
     // Atualiza a interface visual
+
     renderFuncionarios();
 
+
+
     // LIMPA OS CAMPOS DO FORMULÁRIO APÓS SALVAR
+
     document.getElementById("nomeFuncionario").value = "";
+
     document.getElementById("funcaoFuncionario").value = "";
+
     document.getElementById("entradaFuncionario").value = "";
+
     document.getElementById("saidaFuncionario").value = "";
+
     document.getElementById("alojamentoFuncionario").value = "Não";
+
     document.getElementById("vrFuncionario").value = "Não"; // Reseta o select para "Não"
+
     document.getElementById("vtFuncionario").value = "";    // Limpa o input do VT
 
+
+
     // Restaura o texto padrão do botão
+
     const botaoSalvar = document.querySelector("button[onclick='salvarFuncionario()']");
+
     if (botaoSalvar) {
+
         botaoSalvar.textContent = "Salvar Funcionário";
+
     }
+
 }
 
 function renderFuncionarios(lista = funcionarios){
