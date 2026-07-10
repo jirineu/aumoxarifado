@@ -1201,7 +1201,14 @@ function removerDaListaFood(index) {
  */
 function gerarListaFood() {
     const agora = new Date();
-    const hoje = agora.toLocaleDateString("pt-BR");
+    
+    // 1. BLINDAGEM DE DATA: Garante formato "DD/MM/YYYY" idêntico ao servidor
+    const dia = String(agora.getDate()).padStart(2, '0');
+    const mes = String(agora.getMonth() + 1).padStart(2, '0');
+    const ano = agora.getFullYear();
+    const hoje = `${dia}/${mes}/${ano}`; 
+    
+    // Captura o horário do clique atual (ex: "11:58")
     const hora = agora.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
     
     if (!funcionarios || !pontos) {
@@ -1209,19 +1216,19 @@ function gerarListaFood() {
         return;
     }
 
-    // 1. Filtra quem NÃO tem VR marcado como "Sim"
+    // 2. Filtra quem NÃO tem VR marcado como "Sim"
     const semVR = funcionarios.filter(f => !f.vr || String(f.vr).trim().toLowerCase() !== "sim");
 
-    // 2. Mantém apenas quem registrou a entrada hoje
+    // 3. Mantém apenas quem registrou a entrada hoje
     listaFoodAtual = semVR.filter(f => {
         const bateuHoje = pontos.find(p => Number(p.funcionarioId) === Number(f.id) && p.data === hoje);
         return bateuHoje && bateuHoje.entrada;
     });
 
-    // 3. Desenha a lista atualizada na tela do usuário
+    // 4. Desenha a lista atualizada na tela
     renderListaFood();
 
-    // 4. Cria o objeto do relatório com Data, Hora e Total do dia atual
+    // 5. Cria o objeto do relatório com os dados frescos de hoje
     const novoRegistroRefeicao = {
         data: hoje,
         hora: hora,
@@ -1229,22 +1236,35 @@ function gerarListaFood() {
     };
 
     // =====================================================================
-    // AJUSTE CRÍTICO: LIMPEZA E ATUALIZAÇÃO DO LOCALSTORAGE
+    // ATUALIZAÇÃO DO CACHE (LOCALSTORAGE E WINDOW)
     // =====================================================================
-    
-    // 1º Passo: Remove completamente qualquer dado antigo deste relatório do cache
     localStorage.removeItem("relatorioRefeicoes");
-
-    // 2º Passo: Define o array global contendo APENAS o registro fresco de hoje
     window.relatorioRefeicoes = [novoRegistroRefeicao];
-    
-    // 3º Passo: Salva no localStorage o array limpo, contendo apenas o dia atual
     localStorage.setItem("relatorioRefeicoes", JSON.stringify(window.relatorioRefeicoes));
 
     // =====================================================================
-    // 4º Passo: Envia os dados limpos para a planilha (banco de dados)
+    // DISPARO E ENVIO SEGURO
     // =====================================================================
-    salvarTudo(); 
+    console.log("Dados prontos para envio:", window.relatorioRefeicoes);
+    
+    // Se o ambiente do Google estiver disponível, envia direto por aqui
+    if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+            .withSuccessHandler(function() {
+                console.log("Sucesso! Planilha atualizada sem duplicatas.");
+            })
+            .withFailureHandler(function(er) {
+                console.error("Erro ao salvar na planilha:", er);
+            })
+            .salvarRelatorioRefeicao(window.relatorioRefeicoes); // Chama o back-end enviando o array correto
+    } else {
+        // Se você usa uma função intermediária 'salvarTudo()' que gerencia os envios, chamamos ela aqui:
+        if (typeof salvarTudo === "function") {
+            salvarTudo();
+        } else {
+            console.warn("Ambiente local/desconectado. Dados salvos apenas no LocalStorage.");
+        }
+    }
 }
 // ==========================================
 // FUNÇÃO DE LOGIN DO SISTEMA
@@ -1508,11 +1528,76 @@ function buscarEExibirPontosMobile(idFuncionario, btnPrincipal) {
       // Libera o botão de busca principal, pois todo o fluxo terminou
       if (btnPrincipal) btnPrincipal.disabled = false;
 
-      if (retorno.sucesso && retorno.dados && retorno.dados.length > 0) {
-        feedbackPonto.innerText = `Exibindo os últimos ${retorno.dados.length} dias registrados:`;
+      if (retorno.sucesso && retorno.dados) {
+        
+        const hoje = new Date();
+        const anoAtual = hoje.getFullYear();
+        const mesAtual = hoje.getMonth(); // 0 = Janeiro, 11 = Dezembro
+        const diaAtual = hoje.getDate();
+
+        // 1. Gerar lista de dias úteis (Segunda a Sexta) do mês atual até hoje no formato DD/MM
+        const diasUteisDoMes = [];
+        for (let d = 1; d <= diaAtual; d++) {
+          const dataChecagem = new Date(anoAtual, mesAtual, d);
+          const diaSemana = dataChecagem.getDay(); // 0 = Domingo, 6 = Sábado
+          if (diaSemana !== 0 && diaSemana !== 6) {
+            const diaFormatado = String(d).padStart(2, '0') + '/' + String(mesAtual + 1).padStart(2, '0');
+            diasUteisDoMes.push(diaFormatado);
+          }
+        }
+
+        // 2. Mapear os pontos existentes e contar os sábados trabalhados
+        const pontosRegistradosMap = {};
+        let sabadosTrabalhados = 0;
+        let totalDiasRegistrados = 0; // Nova variável para contar os dias trabalhados/registrados
+
+        retorno.dados.forEach(ponto => {
+          const partes = ponto.data.split('/');
+          const dataCurta = `${partes[0]}/${partes[1]}`;
+          
+          pontosRegistradosMap[dataCurta] = ponto;
+          totalDiasRegistrados++; // Incrementa a contagem para cada ponto real vindo do banco
+
+          // Checar se a data do registro cai em um sábado
+          const anoParaObjeto = partes[2] || anoAtual;
+          const dataObjeto = new Date(anoParaObjeto, partes[1] - 1, partes[0]);
+          if (dataObjeto.getDay() === 6) {
+            sabadosTrabalhados++;
+          }
+        });
+
+        // 3. Adicionar os dias úteis que não possuem registro (linhas vazias)
+        diasUteisDoMes.forEach(diaUtil => {
+          if (!pontosRegistradosMap[diaUtil]) {
+            retorno.dados.push({
+              data: diaUtil,
+              entrada: "",
+              almocoSaida: "",
+              almocoRetorno: "",
+              saida: ""
+            });
+          }
+        });
+
+        // 4. Ordenar do mais ATUAL para o mais ANTIGO (Decrescente)
+        retorno.dados.sort((a, b) => {
+          const partesA = a.data.split('/');
+          const partesB = b.data.split('/');
+          const scoreA = parseInt(partesA[1] + partesA[0], 10);
+          const scoreB = parseInt(partesB[1] + partesB[0], 10);
+          return scoreB - scoreA;
+        });
+
+        // --- ALTERAÇÃO AQUI: Texto corrigido conforme solicitado ---
+        feedbackPonto.innerText = `Dias registrados no mês atual: ${totalDiasRegistrados} | Sábados trabalhados no mês atual: ${sabadosTrabalhados}`;
         feedbackPonto.style.color = "#27ae60";
 
+        // Renderização da tabela com a mesma estilização original
+        containerCorpo.innerHTML = ""; 
         retorno.dados.forEach((ponto, index) => {
+          const partesData = ponto.data.split('/');
+          const dataExibicao = `${partesData[0]}/${partesData[1]}`;
+
           const tr = document.createElement("tr");
           
           if (index % 2 === 0) {
@@ -1521,11 +1606,11 @@ function buscarEExibirPontosMobile(idFuncionario, btnPrincipal) {
           tr.style.borderBottom = "1px solid #f1f2f6";
 
           tr.innerHTML = `
-            <td style="padding: 8px 4px; font-weight: bold; color: #2c3e50;">${ponto.data}</td>
-            <td style="padding: 8px 4px; color: #27ae60; font-weight: 500;">${ponto.entrada}</td>
-            <td style="padding: 8px 4px; color: #7f8c8d;">${ponto.almocoSaida}</td>
-            <td style="padding: 8px 4px; color: #7f8c8d;">${ponto.almocoRetorno}</td>
-            <td style="padding: 8px 4px; color: #e74c3c; font-weight: 500;">${ponto.saida}</td>
+            <td style="padding: 8px 4px; font-weight: bold; color: #2c3e50;">${dataExibicao}</td>
+            <td style="padding: 8px 4px; color: #27ae60; font-weight: 500;">${ponto.entrada || ""}</td>
+            <td style="padding: 8px 4px; color: #7f8c8d;">${ponto.almocoSaida || ""}</td>
+            <td style="padding: 8px 4px; color: #7f8c8d;">${ponto.almocoRetorno || ""}</td>
+            <td style="padding: 8px 4px; color: #e74c3c; font-weight: 500;">${ponto.saida || ""}</td>
           `;
           
           containerCorpo.appendChild(tr);
